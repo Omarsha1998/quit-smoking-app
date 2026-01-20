@@ -1,0 +1,10 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "npx quasar serve dist/spa --port $PORT --hostname 0.0.0.0",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
