@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
-// require("dotenv").config();
+
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -25,42 +25,42 @@ const pool = new Pool({
 // Test database connection
 pool.connect((err, client, release) => {
   if (err) {
-    console.error("Error connecting to database:", err.stack);
+    console.error("❌ Error connecting to database:", err.stack);
   } else {
-    console.log("Database connected successfully");
+    console.log("✅ Database connected successfully");
     release();
   }
 });
 
-// Initialize database tables
+// Initialize database tables with deviceId
 const initDB = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(255) PRIMARY KEY,
+      device_id VARCHAR(255) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      quit_date TIMESTAMP NOT NULL,
-      cigarettes_per_day INTEGER NOT NULL,
-      price_per_pack DECIMAL(10, 2) NOT NULL,
+      quit_date TIMESTAMP,
+      cigarettes_per_day INTEGER,
+      price_per_pack DECIMAL(10, 2),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS user_progress (
       id SERIAL PRIMARY KEY,
-      user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
-      days_smoke_free INTEGER,
-      cigarettes_avoided INTEGER,
-      money_saved DECIMAL(10, 2),
+      device_id VARCHAR(255) REFERENCES users(device_id) ON DELETE CASCADE,
+      days_smoke_free INTEGER DEFAULT 0,
+      cigarettes_avoided INTEGER DEFAULT 0,
+      money_saved DECIMAL(10, 2) DEFAULT 0,
       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id)
+      UNIQUE(device_id)
     );
   `;
 
   try {
     await pool.query(createTableQuery);
-    console.log("Database tables initialized");
+    console.log("✅ Database tables initialized");
   } catch (error) {
-    console.error("Error initializing database:", error);
+    console.error("❌ Error initializing database:", error);
   }
 };
 
@@ -75,143 +75,295 @@ app.get("/api/health", (req, res) => {
 
 // Register new user
 app.post("/api/users/register", async (req, res) => {
-  const { userId, userName } = req.body;
+  const { deviceId, userName } = req.body;
+
+  console.log("📝 Registration request:", { deviceId, userName });
+
+  if (!deviceId || !userName) {
+    return res
+      .status(400)
+      .json({ error: "deviceId and userName are required" });
+  }
 
   try {
-    // Check if user already exists
-    const existingUser = await pool.query("SELECT * FROM users WHERE id = $1", [
-      userId,
-    ]);
+    // Check if device already exists
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE device_id = $1",
+      [deviceId],
+    );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "User already exists" });
+      console.log("ℹ️ Device already registered:", deviceId);
+      return res.json({
+        success: true,
+        deviceId,
+        userName,
+        message: "Device already registered",
+      });
     }
+
+    // Insert new user
+    await pool.query(
+      `INSERT INTO users (device_id, name, created_at, updated_at)
+       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [deviceId, userName],
+    );
+
+    console.log("✅ Device registered successfully:", deviceId);
 
     res.json({
       success: true,
-      userId,
+      deviceId,
       userName,
-      message: "User ID created. Please complete your profile.",
+      message: "Device registered successfully",
     });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ error: "Failed to register user" });
+    console.error("❌ Error registering device:", error);
+    res.status(500).json({
+      error: "Failed to register device",
+      details: error.message,
+    });
   }
 });
 
-// Save user quit data and start tracking
+// Start tracking
 app.post("/api/users/start", async (req, res) => {
-  const { userId, userName, quitDate, cigarettesPerDay, pricePerPack } =
+  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
     req.body;
 
+  console.log("🚀 Start tracking request:", {
+    deviceId,
+    userName,
+    quitDate,
+    cigarettesPerDay,
+    pricePerPack,
+  });
+
+  if (
+    !deviceId ||
+    !userName ||
+    !quitDate ||
+    !cigarettesPerDay ||
+    !pricePerPack
+  ) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
   try {
-    // Insert or update user
-    await pool.query(
-      `INSERT INTO users (id, name, quit_date, cigarettes_per_day, price_per_pack, updated_at)
+    // Update device with quit data
+    const result = await pool.query(
+      `INSERT INTO users (device_id, name, quit_date, cigarettes_per_day, price_per_pack, updated_at)
        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-       ON CONFLICT (id) 
+       ON CONFLICT (device_id) 
        DO UPDATE SET 
          name = $2,
          quit_date = $3,
          cigarettes_per_day = $4,
          price_per_pack = $5,
-         updated_at = CURRENT_TIMESTAMP`,
-      [userId, userName, quitDate, cigarettesPerDay, pricePerPack],
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack],
     );
 
-    res.json({ success: true, message: "Tracking started successfully" });
+    console.log("✅ Tracking started for device:", deviceId);
+    console.log("📊 Device data:", result.rows[0]);
+
+    res.json({
+      success: true,
+      message: "Tracking started successfully",
+      user: result.rows[0],
+    });
   } catch (error) {
-    console.error("Error starting tracking:", error);
-    res.status(500).json({ error: "Failed to start tracking" });
+    console.error("❌ Error starting tracking:", error);
+    res.status(500).json({
+      error: "Failed to start tracking",
+      details: error.message,
+    });
   }
 });
 
-// Get user data
-app.get("/api/users/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Get user data by deviceId
+app.get("/api/users/:deviceId", async (req, res) => {
+  const { deviceId } = req.params;
+
+  console.log("🔍 Get user request:", deviceId);
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [
-      userId,
-    ]);
+    const result = await pool.query(
+      `SELECT u.*, 
+              COALESCE(p.days_smoke_free, 0) as days_smoke_free,
+              COALESCE(p.cigarettes_avoided, 0) as cigarettes_avoided,
+              COALESCE(p.money_saved, 0) as money_saved,
+              COALESCE(p.last_updated, u.updated_at) as progress_updated
+       FROM users u
+       LEFT JOIN user_progress p ON u.device_id = p.device_id
+       WHERE u.device_id = $1`,
+      [deviceId],
+    );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      console.log("⚠️ Device not found:", deviceId);
+      return res.status(404).json({ error: "Device not found" });
     }
 
+    console.log("✅ Device found:", result.rows[0]);
     res.json(result.rows[0]);
   } catch (error) {
-    console.error("Error fetching user:", error);
-    res.status(500).json({ error: "Failed to fetch user data" });
+    console.error("❌ Error fetching device:", error);
+    res.status(500).json({
+      error: "Failed to fetch device data",
+      details: error.message,
+    });
   }
 });
 
-// Update user progress
-app.post("/api/users/:userId/progress", async (req, res) => {
-  const { userId } = req.params;
+// Update progress by deviceId
+app.post("/api/users/:deviceId/progress", async (req, res) => {
+  const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
 
+  console.log("📈 Progress update request:", {
+    deviceId,
+    daysSmokeeFree,
+    cigarettesAvoided,
+    moneySaved,
+  });
+
+  if (
+    daysSmokeeFree === undefined ||
+    cigarettesAvoided === undefined ||
+    moneySaved === undefined
+  ) {
+    return res.status(400).json({ error: "All progress fields are required" });
+  }
+
   try {
-    await pool.query(
-      `INSERT INTO user_progress (user_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
+    // First check if device exists
+    const userCheck = await pool.query(
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
+    );
+
+    if (userCheck.rows.length === 0) {
+      console.log("⚠️ Device not found for progress update:", deviceId);
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    // Update or insert progress
+    const result = await pool.query(
+      `INSERT INTO user_progress (device_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-       ON CONFLICT (user_id)
+       ON CONFLICT (device_id)
        DO UPDATE SET 
          days_smoke_free = $2,
          cigarettes_avoided = $3,
          money_saved = $4,
-         last_updated = CURRENT_TIMESTAMP`,
-      [userId, daysSmokeeFree, cigarettesAvoided, moneySaved],
+         last_updated = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved],
     );
 
-    res.json({ success: true, message: "Progress updated" });
+    console.log("✅ Progress updated successfully:", result.rows[0]);
+
+    res.json({
+      success: true,
+      message: "Progress updated",
+      progress: result.rows[0],
+    });
   } catch (error) {
-    console.error("Error updating progress:", error);
-    res.status(500).json({ error: "Failed to update progress" });
+    console.error("❌ Error updating progress:", error);
+    res.status(500).json({
+      error: "Failed to update progress",
+      details: error.message,
+    });
   }
 });
 
 // Get all users (for admin)
 app.get("/api/users", async (req, res) => {
+  console.log("👥 Get all users request");
+
   try {
     const result = await pool.query(`
       SELECT 
-        u.id,
+        u.device_id,
         u.name,
         u.quit_date,
         u.cigarettes_per_day,
         u.price_per_pack,
+        u.created_at,
         u.updated_at,
         COALESCE(p.days_smoke_free, 0) as days_smoke_free,
         COALESCE(p.cigarettes_avoided, 0) as cigarettes_avoided,
         COALESCE(p.money_saved, 0) as money_saved,
         COALESCE(p.last_updated, u.updated_at) as last_updated
       FROM users u
-      LEFT JOIN user_progress p ON u.id = p.user_id
+      LEFT JOIN user_progress p ON u.device_id = p.device_id
       ORDER BY p.days_smoke_free DESC NULLS LAST
     `);
 
+    console.log(`✅ Found ${result.rows.length} users`);
     res.json(result.rows);
   } catch (error) {
-    console.error("Error fetching all users:", error);
-    res.status(500).json({ error: "Failed to fetch users" });
+    console.error("❌ Error fetching all users:", error);
+    res.status(500).json({
+      error: "Failed to fetch users",
+      details: error.message,
+    });
   }
 });
 
-// Delete user (reset)
-app.delete("/api/users/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Delete user by deviceId
+app.delete("/api/users/:deviceId", async (req, res) => {
+  const { deviceId } = req.params;
+
+  console.log("🗑️ Delete device request:", deviceId);
 
   try {
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
-    res.json({ success: true, message: "User data deleted" });
+    const result = await pool.query(
+      "DELETE FROM users WHERE device_id = $1 RETURNING *",
+      [deviceId],
+    );
+
+    if (result.rows.length === 0) {
+      console.log("⚠️ Device not found for deletion:", deviceId);
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    console.log("✅ Device deleted successfully:", deviceId);
+    res.json({ success: true, message: "Device data deleted" });
   } catch (error) {
-    console.error("Error deleting user:", error);
-    res.status(500).json({ error: "Failed to delete user" });
+    console.error("❌ Error deleting device:", error);
+    res.status(500).json({
+      error: "Failed to delete device",
+      details: error.message,
+    });
+  }
+});
+
+// Debug endpoint
+app.get("/api/debug/stats", async (req, res) => {
+  try {
+    const userCount = await pool.query("SELECT COUNT(*) FROM users");
+    const progressCount = await pool.query(
+      "SELECT COUNT(*) FROM user_progress",
+    );
+    const recentUsers = await pool.query(
+      "SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5",
+    );
+
+    res.json({
+      totalUsers: parseInt(userCount.rows[0].count),
+      totalProgress: parseInt(progressCount.rows[0].count),
+      recentUsers: recentUsers.rows,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 API Base URL: http://localhost:${PORT}/api`);
 });
