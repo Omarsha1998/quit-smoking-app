@@ -73,7 +73,7 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
 
-// Register new user
+// Register new user (FIXED - Now properly handles updates)
 app.post("/api/users/register", async (req, res) => {
   const { deviceId, userName } = req.body;
 
@@ -86,36 +86,34 @@ app.post("/api/users/register", async (req, res) => {
   }
 
   try {
-    // Check if device already exists
-    const existingUser = await pool.query(
-      "SELECT * FROM users WHERE device_id = $1",
-      [deviceId],
-    );
-
-    if (existingUser.rows.length > 0) {
-      console.log("ℹ️ Device already registered:", deviceId);
-      return res.json({
-        success: true,
-        deviceId,
-        userName,
-        message: "Device already registered",
-      });
-    }
-
-    // Insert new user
-    await pool.query(
+    // FIXED: Use UPSERT instead of checking first
+    const result = await pool.query(
       `INSERT INTO users (device_id, name, created_at, updated_at)
-       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT (device_id) 
+       DO UPDATE SET 
+         name = EXCLUDED.name,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
       [deviceId, userName],
     );
 
-    console.log("✅ Device registered successfully:", deviceId);
+    const isNewUser = result.rows[0].created_at === result.rows[0].updated_at;
+
+    console.log(
+      isNewUser ? "✅ New device registered:" : "✅ Existing device updated:",
+      deviceId,
+    );
 
     res.json({
       success: true,
       deviceId,
       userName,
-      message: "Device registered successfully",
+      isNewUser,
+      message: isNewUser
+        ? "Device registered successfully"
+        : "Device information updated",
+      user: result.rows[0],
     });
   } catch (error) {
     console.error("❌ Error registering device:", error);
@@ -126,7 +124,7 @@ app.post("/api/users/register", async (req, res) => {
   }
 });
 
-// Start tracking
+// Start tracking (FIXED - Better logging and response)
 app.post("/api/users/start", async (req, res) => {
   const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
     req.body;
@@ -150,28 +148,39 @@ app.post("/api/users/start", async (req, res) => {
   }
 
   try {
-    // Update device with quit data
+    // Update device with quit data (or insert if doesn't exist)
     const result = await pool.query(
-      `INSERT INTO users (device_id, name, quit_date, cigarettes_per_day, price_per_pack, updated_at)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+      `INSERT INTO users (device_id, name, quit_date, cigarettes_per_day, price_per_pack, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id) 
        DO UPDATE SET 
-         name = $2,
-         quit_date = $3,
-         cigarettes_per_day = $4,
-         price_per_pack = $5,
+         name = EXCLUDED.name,
+         quit_date = EXCLUDED.quit_date,
+         cigarettes_per_day = EXCLUDED.cigarettes_per_day,
+         price_per_pack = EXCLUDED.price_per_pack,
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
       [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack],
     );
 
-    console.log("✅ Tracking started for device:", deviceId);
-    console.log("📊 Device data:", result.rows[0]);
+    const userData = result.rows[0];
+    const isNewTracking = userData.created_at === userData.updated_at;
+
+    console.log(
+      isNewTracking
+        ? "✅ New tracking started for device:"
+        : "✅ Tracking updated for device:",
+      deviceId,
+    );
+    console.log("📊 User data:", userData);
 
     res.json({
       success: true,
-      message: "Tracking started successfully",
-      user: result.rows[0],
+      message: isNewTracking
+        ? "Tracking started successfully"
+        : "Tracking updated successfully",
+      isNewTracking,
+      user: userData,
     });
   } catch (error) {
     console.error("❌ Error starting tracking:", error);
@@ -217,7 +226,7 @@ app.get("/api/users/:deviceId", async (req, res) => {
   }
 });
 
-// Update progress by deviceId
+// Update progress by deviceId (FIXED - Better validation)
 app.post("/api/users/:deviceId/progress", async (req, res) => {
   const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
@@ -246,7 +255,10 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
 
     if (userCheck.rows.length === 0) {
       console.log("⚠️ Device not found for progress update:", deviceId);
-      return res.status(404).json({ error: "Device not found" });
+      return res.status(404).json({
+        error: "Device not found",
+        message: "Please register and start tracking first",
+      });
     }
 
     // Update or insert progress
@@ -255,9 +267,9 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id)
        DO UPDATE SET 
-         days_smoke_free = $2,
-         cigarettes_avoided = $3,
-         money_saved = $4,
+         days_smoke_free = EXCLUDED.days_smoke_free,
+         cigarettes_avoided = EXCLUDED.cigarettes_avoided,
+         money_saved = EXCLUDED.money_saved,
          last_updated = CURRENT_TIMESTAMP
        RETURNING *`,
       [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved],
@@ -331,7 +343,11 @@ app.delete("/api/users/:deviceId", async (req, res) => {
     }
 
     console.log("✅ Device deleted successfully:", deviceId);
-    res.json({ success: true, message: "Device data deleted" });
+    res.json({
+      success: true,
+      message: "Device data deleted",
+      deletedUser: result.rows[0],
+    });
   } catch (error) {
     console.error("❌ Error deleting device:", error);
     res.status(500).json({
