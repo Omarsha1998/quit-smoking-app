@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
-// require("dotenv").config();
+
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -36,24 +36,26 @@ pool.connect((err, client, release) => {
 const initDB = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(255) PRIMARY KEY,
+      device_id VARCHAR(255) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      quit_date TIMESTAMP NOT NULL,
-      cigarettes_per_day INTEGER NOT NULL,
-      price_per_pack DECIMAL(10, 2) NOT NULL,
+      quit_date TIMESTAMP,
+      cigarettes_per_day INTEGER,
+      price_per_pack DECIMAL(10, 2),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS user_progress (
       id SERIAL PRIMARY KEY,
-      user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+      device_id VARCHAR(255) REFERENCES users(device_id) ON DELETE CASCADE,
       days_smoke_free INTEGER,
       cigarettes_avoided INTEGER,
       money_saved DECIMAL(10, 2),
       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id)
+      UNIQUE(device_id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_users_device_id ON users(device_id);
   `;
 
   try {
@@ -73,25 +75,44 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
 
-// Register new user
+// Register new user (or update if exists)
 app.post("/api/users/register", async (req, res) => {
-  const { userId, userName } = req.body;
+  const { deviceId, userName } = req.body;
+
+  if (!deviceId || !userName) {
+    return res.status(400).json({ error: "Device ID and name are required" });
+  }
 
   try {
-    // Check if user already exists
-    const existingUser = await pool.query("SELECT * FROM users WHERE id = $1", [
-      userId,
-    ]);
+    // Check if device already exists
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE device_id = $1",
+      [deviceId],
+    );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "User already exists" });
+      // Device exists, just return success
+      return res.json({
+        success: true,
+        deviceId,
+        userName: existingUser.rows[0].name,
+        message: "Welcome back!",
+        existing: true,
+      });
     }
+
+    // New device, create user
+    await pool.query("INSERT INTO users (device_id, name) VALUES ($1, $2)", [
+      deviceId,
+      userName,
+    ]);
 
     res.json({
       success: true,
-      userId,
+      deviceId,
       userName,
-      message: "User ID created. Please complete your profile.",
+      message: "User registered successfully",
+      existing: false,
     });
   } catch (error) {
     console.error("Error registering user:", error);
@@ -101,22 +122,26 @@ app.post("/api/users/register", async (req, res) => {
 
 // Save user quit data and start tracking
 app.post("/api/users/start", async (req, res) => {
-  const { userId, userName, quitDate, cigarettesPerDay, pricePerPack } =
+  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
     req.body;
+
+  if (!deviceId) {
+    return res.status(400).json({ error: "Device ID is required" });
+  }
 
   try {
     // Insert or update user
     await pool.query(
-      `INSERT INTO users (id, name, quit_date, cigarettes_per_day, price_per_pack, updated_at)
+      `INSERT INTO users (device_id, name, quit_date, cigarettes_per_day, price_per_pack, updated_at)
        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-       ON CONFLICT (id) 
+       ON CONFLICT (device_id) 
        DO UPDATE SET 
          name = $2,
          quit_date = $3,
          cigarettes_per_day = $4,
          price_per_pack = $5,
          updated_at = CURRENT_TIMESTAMP`,
-      [userId, userName, quitDate, cigarettesPerDay, pricePerPack],
+      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack],
     );
 
     res.json({ success: true, message: "Tracking started successfully" });
@@ -126,14 +151,15 @@ app.post("/api/users/start", async (req, res) => {
   }
 });
 
-// Get user data
-app.get("/api/users/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Get user data by device ID
+app.get("/api/users/:deviceId", async (req, res) => {
+  const { deviceId } = req.params;
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [
-      userId,
-    ]);
+    const result = await pool.query(
+      "SELECT * FROM users WHERE device_id = $1",
+      [deviceId],
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "User not found" });
@@ -147,21 +173,21 @@ app.get("/api/users/:userId", async (req, res) => {
 });
 
 // Update user progress
-app.post("/api/users/:userId/progress", async (req, res) => {
-  const { userId } = req.params;
+app.post("/api/users/:deviceId/progress", async (req, res) => {
+  const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
 
   try {
     await pool.query(
-      `INSERT INTO user_progress (user_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
+      `INSERT INTO user_progress (device_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-       ON CONFLICT (user_id)
+       ON CONFLICT (device_id)
        DO UPDATE SET 
          days_smoke_free = $2,
          cigarettes_avoided = $3,
          money_saved = $4,
          last_updated = CURRENT_TIMESTAMP`,
-      [userId, daysSmokeeFree, cigarettesAvoided, moneySaved],
+      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved],
     );
 
     res.json({ success: true, message: "Progress updated" });
@@ -176,7 +202,7 @@ app.get("/api/users", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        u.id,
+        u.device_id,
         u.name,
         u.quit_date,
         u.cigarettes_per_day,
@@ -187,7 +213,7 @@ app.get("/api/users", async (req, res) => {
         COALESCE(p.money_saved, 0) as money_saved,
         COALESCE(p.last_updated, u.updated_at) as last_updated
       FROM users u
-      LEFT JOIN user_progress p ON u.id = p.user_id
+      LEFT JOIN user_progress p ON u.device_id = p.device_id
       ORDER BY p.days_smoke_free DESC NULLS LAST
     `);
 
@@ -199,11 +225,11 @@ app.get("/api/users", async (req, res) => {
 });
 
 // Delete user (reset)
-app.delete("/api/users/:userId", async (req, res) => {
-  const { userId } = req.params;
+app.delete("/api/users/:deviceId", async (req, res) => {
+  const { deviceId } = req.params;
 
   try {
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    await pool.query("DELETE FROM users WHERE device_id = $1", [deviceId]);
     res.json({ success: true, message: "User data deleted" });
   } catch (error) {
     console.error("Error deleting user:", error);
