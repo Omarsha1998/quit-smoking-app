@@ -2,5 +2,6 @@ node_modules/
 .env
 dist/
 .quasar/
+quasar.config.js
 *.log
 .DS_Store
