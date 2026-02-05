@@ -1,67 +1,133 @@
-// src/services/api.js
-import axios from "axios";
+// src/services/api.js - FIXED VERSION
+import axios from 'axios'
 
-const API_BASE_URL = process.env.VUE_APP_API_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.API_URL || 'http://localhost:3000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
-});
+  timeout: 10000,
+})
+
+api.interceptors.request.use(
+  (config) => {
+    return config
+  },
+  (error) => {
+    console.error('❌ Request Error:', error)
+    return Promise.reject(error)
+  },
+)
+
+api.interceptors.response.use(
+  (response) => {
+    return response
+  },
+  (error) => {
+    console.error('❌ API Error:', error.response?.data || error.message)
+    return Promise.reject(error)
+  },
+)
 
 export const userAPI = {
-  // Register user
-  async register(userId, userName) {
-    const response = await api.post("/users/register", { userId, userName });
-    return response.data;
+  // Record app open
+  async recordAppOpen(deviceId, isOnline = true) {
+    try {
+      const response = await api.post(`/users/${deviceId}/app-open`, {
+        isOnline,
+      })
+      return response.data
+    } catch (error) {
+      console.error('❌ Record app open failed:', error)
+      throw error
+    }
   },
 
-  // Start tracking
-  async startTracking(
-    userId,
-    userName,
-    quitDate,
-    cigarettesPerDay,
-    pricePerPack
-  ) {
-    const response = await api.post("/users/start", {
-      userId,
-      userName,
-      quitDate,
-      cigarettesPerDay,
-      pricePerPack,
-    });
-    return response.data;
+  // Get app opens statistics
+  async getAppOpens(deviceId) {
+    try {
+      const response = await api.get(`/users/${deviceId}/app-opens`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Get app opens failed:', error)
+      throw error
+    }
   },
 
-  // Get user data
-  async getUser(userId) {
-    const response = await api.get(`/users/${userId}`);
-    return response.data;
+  async register(deviceId, userName) {
+    try {
+      const response = await api.post('/users/register', {
+        deviceId,
+        userName,
+      })
+      return response.data
+    } catch (error) {
+      console.error('❌ Register failed:', error)
+      throw error
+    }
   },
 
-  // Update progress
-  async updateProgress(userId, daysSmokeeFree, cigarettesAvoided, moneySaved) {
-    const response = await api.post(`/users/${userId}/progress`, {
-      daysSmokeeFree,
-      cigarettesAvoided,
-      moneySaved,
-    });
-    return response.data;
+  async startTracking(deviceId, userName, quitDate, cigarettesPerDay, pricePerPack) {
+    try {
+      const response = await api.post('/users/start', {
+        deviceId,
+        userName,
+        quitDate,
+        cigarettesPerDay,
+        pricePerPack,
+      })
+      return response.data
+    } catch (error) {
+      console.error('❌ Start tracking failed:', error)
+      throw error
+    }
   },
 
-  // Get all users (admin)
+  async getUser(deviceId) {
+    try {
+      const response = await api.get(`/users/${deviceId}`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Get user failed:', error)
+      throw error
+    }
+  },
+
+  async updateProgress(deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved) {
+    try {
+      const response = await api.post(`/users/${deviceId}/progress`, {
+        daysSmokeeFree,
+        cigarettesAvoided,
+        moneySaved,
+      })
+      return response.data
+    } catch (error) {
+      console.error('❌ Update progress failed:', error)
+      throw error
+    }
+  },
+
   async getAllUsers() {
-    const response = await api.get("/users");
-    return response.data;
+    try {
+      const response = await api.get('/users')
+      return response.data
+    } catch (error) {
+      console.error('❌ Get all users failed:', error)
+      throw error
+    }
   },
 
-  // Delete user
-  async deleteUser(userId) {
-    const response = await api.delete(`/users/${userId}`);
-    return response.data;
+  async deleteUser(deviceId) {
+    try {
+      const response = await api.delete(`/users/${deviceId}`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Delete user failed:', error)
+      throw error
+    }
   },
-};
+}
 
-export default api;
+export default api

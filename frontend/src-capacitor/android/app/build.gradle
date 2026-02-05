@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace "org.capacitor.quasar.app"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,16 +22,18 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-
+    
     signingConfigs {
         release {
-            storeFile file('my-release-key.keystore')
-            storePassword 'Naifa'
-            keyAlias 'my-key-alias'
-            keyPassword 'Naifa'
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
-
+    
     buildTypes {
         release {
             signingConfig signingConfigs.release

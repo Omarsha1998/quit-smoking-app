@@ -1,13 +1,13 @@
 {
   "name": "quit-smoking",
   "version": "0.0.1",
-  "description": "quit-smoking",
+  "description": "Quit Smoking",
   "author": "Omar <shaidomarsha@gmail.com>",
   "private": true,
   "dependencies": {
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/cli": "^6.0.0",
-    "@capacitor/core": "^6.0.0"
+    "@capacitor/android": "^7.4.5",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
   }
 }

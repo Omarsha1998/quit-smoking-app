@@ -1,40 +1,43 @@
 {
   "name": "quit-smoking",
   "version": "0.0.1",
-  "description": "quit-smoking",
-  "productName": "quit-smoking",
+  "description": "Quit Smoking",
+  "productName": "Quit Smoking",
   "author": "Omar <shaidomarsha@gmail.com>",
+  "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.vue ./",
+    "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{js,cjs,mjs,vue}\"",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "build": "quasar build"
+    "build": "quasar build",
+    "postinstall": "quasar prepare"
   },
   "dependencies": {
-    "@capacitor/preferences": "^8.0.0",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.2.1",
     "dayjs": "^1.11.19",
-    "firebase": "^12.7.0",
-    "localforage": "^1.10.0",
-    "pinia": "^2.0.11",
-    "quasar": "^2.8.0",
-    "vue": "^3.2.29",
-    "vue-router": "^4.0.12"
+    "pinia": "^3.0.1",
+    "quasar": "^2.16.0",
+    "vue": "^3.5.22",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "@quasar/app-vite": "^1.4.3",
+    "@eslint/js": "^9.14.0",
+    "@quasar/app-vite": "^2.1.0",
+    "@vue/eslint-config-prettier": "^10.1.0",
     "autoprefixer": "^10.4.2",
-    "eslint": "^8.11.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-vue": "^9.0.0",
+    "eslint": "^9.14.0",
+    "eslint-plugin-vue": "^10.4.0",
+    "globals": "^16.4.0",
     "postcss": "^8.4.14",
-    "prettier": "^2.5.1"
+    "prettier": "^3.3.3",
+    "vite-plugin-checker": "^0.11.0",
+    "vue-eslint-parser": "^10.2.0"
   },
   "engines": {
-    "node": "^20 || ^18 || ^16",
+    "node": "^28 || ^26 || ^24 || ^22 || ^20",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
   }
