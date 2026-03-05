@@ -127,11 +127,17 @@ export const userAPI = {
   /**
    * Save (or upsert) a daily smoke check-in to the database.
    * POST /users/:deviceId/daily-log
-   * Body: { date: 'YYYY-MM-DD', smoked: boolean }
+   * Body: { date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }
+   *
+   * smokedCount = 0 if smoke-free, otherwise how many cigarettes they smoked.
    */
-  async logDailyEntry(deviceId, date, smoked) {
+  async logDailyEntry(deviceId, date, smoked, smokedCount = 0) {
     try {
-      const response = await api.post(`/users/${deviceId}/daily-log`, { date, smoked })
+      const response = await api.post(`/users/${deviceId}/daily-log`, {
+        date,
+        smoked,
+        smokedCount: smoked ? (parseInt(smokedCount) || 0) : 0,
+      })
       return response.data
     } catch (error) {
       console.error('❌ Log daily entry failed:', error)
@@ -142,7 +148,7 @@ export const userAPI = {
   /**
    * Fetch all daily log entries for a user.
    * GET /users/:deviceId/daily-logs
-   * Returns: [{ date: 'YYYY-MM-DD', smoked: boolean }, ...]
+   * Returns: [{ date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }, ...]
    */
   async getDailyLogs(deviceId) {
     try {

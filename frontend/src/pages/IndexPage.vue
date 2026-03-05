@@ -43,8 +43,10 @@
           :today-date-label="todayDateLabel"
           :today-logged="todayLogged"
           :today-smoked="todaySmoked"
+          :today-smoked-count="todaySmokedCount"
           :current-streak="currentStreak"
           :total-smoke-freedays="totalSmokeFreedays"
+          :cigarettes-per-day="Number(cigarettesPerDay)"
           @log="onLogDay"
         />
 
@@ -52,7 +54,11 @@
 
         <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" />
 
-        <CigarettesGraph :total-days="stats.days" :cigarettes-per-day="Number(cigarettesPerDay)" />
+        <CigarettesGraph
+          :total-days="stats.days"
+          :cigarettes-per-day="Number(cigarettesPerDay)"
+          :daily-logs="dailyLogs"
+        />
 
         <DiseaseRiskCountdown :milestones="diseaseRiskMilestones" />
 
@@ -85,8 +91,8 @@
           </template>
         </InfoList>
 
-        <InfoList title="Educational Tips"           icon="school"   header-color="bg-blue-6"  badge-color="blue-6"  text-color="text-blue-8"  :items="EDUCATIONAL_TIPS"  />
-        <InfoList title="Risk Factors of Smoking"    icon="warning"  header-color="bg-red-6"   badge-color="red-6"   text-color="text-red-8"   :items="RISK_FACTORS"      />
+        <InfoList title="Educational Tips"            icon="school"   header-color="bg-blue-6"  badge-color="blue-6"  text-color="text-blue-8"  :items="EDUCATIONAL_TIPS"  />
+        <InfoList title="Risk Factors of Smoking"     icon="warning"  header-color="bg-red-6"   badge-color="red-6"   text-color="text-red-8"   :items="RISK_FACTORS"      />
         <InfoList title="Health Benefits of Quitting" icon="favorite" header-color="bg-green-6" badge-color="green-6" text-color="text-green-8" :items="HEALTH_BENEFITS"   />
 
         <q-btn @click="handleReset" color="grey-5" text-color="grey-8" label="Reset Progress" size="md" class="full-width" />
@@ -186,25 +192,25 @@ import { useTapGame }    from '../composables/useTapGame'
 import { useCommunity }  from '../composables/useCommunity'
 
 // Components
-import RegistrationCard    from '../components/RegistrationCard.vue'
-import SetupForm           from '../components/SetupForm.vue'
-import DailyCheckIn        from '../components/DailyCheckIn.vue'
-import StatsGrid           from '../components/StatsGrid.vue'
-import SavingsBreakdown    from '../components/SavingsBreakdown.vue'
-import CigarettesGraph     from '../components/CigarettesGraph.vue'
+import RegistrationCard     from '../components/RegistrationCard.vue'
+import SetupForm            from '../components/SetupForm.vue'
+import DailyCheckIn         from '../components/DailyCheckIn.vue'
+import StatsGrid            from '../components/StatsGrid.vue'
+import SavingsBreakdown     from '../components/SavingsBreakdown.vue'
+import CigarettesGraph      from '../components/CigarettesGraph.vue'
 import DiseaseRiskCountdown from '../components/DiseaseRiskCountdown.vue'
-import CravingToolbar      from '../components/CravingToolbar.vue'
+import CravingToolbar       from '../components/CravingToolbar.vue'
 import MotivationalCarousel from '../components/MotivationalCarousel.vue'
-import NotificationsToggle from '../components/NotificationsToggle.vue'
-import InfoList            from '../components/InfoList.vue'
-import AdminDashboard      from '../components/AdminDashboard.vue'
-import CravingDialog       from '../components/CravingDialog.vue'
-import BreathingDialog     from '../components/BreathingDialog.vue'
-import DelayTimerDialog    from '../components/DelayTimerDialog.vue'
-import TapGameDialog       from '../components/TapGameDialog.vue'
-import CommunityDialog     from '../components/CommunityDialog.vue'
-import AdminPinDialog      from '../components/AdminPinDialog.vue'
-import UserDetailsDialog   from '../components/UserDetailsDialog.vue'
+import NotificationsToggle  from '../components/NotificationsToggle.vue'
+import InfoList             from '../components/InfoList.vue'
+import AdminDashboard       from '../components/AdminDashboard.vue'
+import CravingDialog        from '../components/CravingDialog.vue'
+import BreathingDialog      from '../components/BreathingDialog.vue'
+import DelayTimerDialog     from '../components/DelayTimerDialog.vue'
+import TapGameDialog        from '../components/TapGameDialog.vue'
+import CommunityDialog      from '../components/CommunityDialog.vue'
+import AdminPinDialog       from '../components/AdminPinDialog.vue'
+import UserDetailsDialog    from '../components/UserDetailsDialog.vue'
 
 import { userAPI } from '../services/api'
 
@@ -232,19 +238,20 @@ export default {
       cigarettesPerDay: '',
       pricePerPack:     '',
 
-      // ── Stats (managed via composable, mirrored here) ──
+      // ── Stats ──
       stats: { days: 0, hours: 0, minutes: 0, cigarettesAvoided: 0, moneySaved: 0, lifeRegained: 0, healthBoost: 0 },
-      dailySavings:   0,
-      weeklySavings:  0,
-      monthlySavings: 0,
+      dailySavings:          0,
+      weeklySavings:         0,
+      monthlySavings:        0,
       diseaseRiskMilestones: [],
 
-      // ── Daily log (from composable) ──
-      dailyLogs:        [],
-      todayLogged:      false,
-      todaySmoked:      false,
-      todayDateLabel:   '',
-      currentStreak:    0,
+      // ── Daily log ──
+      dailyLogs:          [],
+      todayLogged:        false,
+      todaySmoked:        false,
+      todaySmokedCount:   0,       // ← NEW: how many they smoked today
+      todayDateLabel:     '',
+      currentStreak:      0,
       totalSmokeFreedays: 0,
 
       // ── Notifications ──
@@ -255,38 +262,38 @@ export default {
       showCravingDialog: false,
       activeCravingTip:  '',
 
-      // ── Breathing (from composable) ──
+      // ── Breathing ──
       showBreathingDialog: false,
-      breathingStarted:  false,
-      breathingDone:     false,
-      breathPhase:       'inhale',
-      breathCountdown:   4,
-      breathCyclesDone:  0,
-      breathTotalCycles: 6,
-      breathLabel:       'Inhale',
-      breathPhaseFull:   '',
-      breathCircleStyle: {},
-      breathProgress:    0,
+      breathingStarted:    false,
+      breathingDone:       false,
+      breathPhase:         'inhale',
+      breathCountdown:     4,
+      breathCyclesDone:    0,
+      breathTotalCycles:   6,
+      breathLabel:         'Inhale',
+      breathPhaseFull:     '',
+      breathCircleStyle:   {},
+      breathProgress:      0,
 
-      // ── Delay timer (from composable) ──
-      showDelayDialog:  false,
-      delayStarted:     false,
-      delayDone:        false,
-      delayMinutes:     5,
-      delaySeconds:     0,
-      delayProgress:    0,
-      delayMessage:     '',
+      // ── Delay timer ──
+      showDelayDialog: false,
+      delayStarted:    false,
+      delayDone:       false,
+      delayMinutes:    5,
+      delaySeconds:    0,
+      delayProgress:   0,
+      delayMessage:    '',
 
-      // ── Tap game (from composable) ──
+      // ── Tap game ──
       showTapGameDialog: false,
-      tapGameStarted:   false,
-      tapGameDone:      false,
-      tapCount:         0,
-      tapTimeLeft:      60,
-      tapProgress:      0,
-      tapResultMessage: '',
+      tapGameStarted:    false,
+      tapGameDone:       false,
+      tapCount:          0,
+      tapTimeLeft:       60,
+      tapProgress:       0,
+      tapResultMessage:  '',
 
-      // ── Community (from composable) ──
+      // ── Community ──
       showCommunityDialog:   false,
       joinedChallenge:       false,
       communityParticipants: 247,
@@ -295,23 +302,23 @@ export default {
       leaderboard:           [],
 
       // ── Admin ──
-      showAdmin:           false,
-      allUsers:            [],
-      showUserDialog:      false,
-      selectedUser:        null,
-      showPinDialog:       false,
-      adminPin:            '',
-      isAdminAuthenticated:false,
+      showAdmin:            false,
+      allUsers:             [],
+      showUserDialog:       false,
+      selectedUser:         null,
+      showPinDialog:        false,
+      adminPin:             '',
+      isAdminAuthenticated: false,
 
       // ── Sync ──
-      isOnline:   navigator.onLine,
-      syncQueue:  [],
+      isOnline:  navigator.onLine,
+      syncQueue: [],
 
       // ── Intervals ──
       updateInterval:         null,
       backgroundSyncInterval: null,
 
-      // ── Expose constants to template ──
+      // ── Constants exposed to template ──
       MOTIVATIONAL_QUOTES,
       HEALTH_MILESTONES,
       EDUCATIONAL_TIPS,
@@ -331,7 +338,6 @@ export default {
   },
 
   mounted() {
-    // ── Wire composables ──
     this._initComposables()
 
     window.addEventListener('online',  this._onOnline)
@@ -346,8 +352,8 @@ export default {
   beforeUnmount() {
     window.removeEventListener('online',  this._onOnline)
     window.removeEventListener('offline', this._onOffline)
-    if (this.updateInterval)          clearInterval(this.updateInterval)
-    if (this.notificationInterval)    clearInterval(this.notificationInterval)
+    if (this.updateInterval)       clearInterval(this.updateInterval)
+    if (this.notificationInterval) clearInterval(this.notificationInterval)
     this._breathing.stopBreathing()
     this._delay.stopDelayTimer()
     this._tap.stopTapGame()
@@ -359,53 +365,54 @@ export default {
     // COMPOSABLE WIRING
     // ════════════════════════════════════════════
     _initComposables() {
-
       const quitDateRef         = ref(this.quitDate)
       const cigarettesPerDayRef = ref(this.cigarettesPerDay)
       const pricePerPackRef     = ref(this.pricePerPack)
 
-      // ── Daily log (init first so we can pass its ref into stats) ──
       const log = useDailyLog()
-      log.dailyLogs.value = this.dailyLogs   // seed from localStorage
+      log.dailyLogs.value = this.dailyLogs
       this._log = log
 
-      // ── Stats — receives dailyLogs ref so days reflects actual smoke-free days ──
-      this._statsComp = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
+      this._statsComp           = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
       this._quitDateRef         = quitDateRef
       this._cigarettesPerDayRef = cigarettesPerDayRef
       this._pricePerPackRef     = pricePerPackRef
 
-      // ── Sync ──
-      this._sync = useSync()
-
-      // ── Mini-games ──
+      this._sync      = useSync()
       this._breathing = useBreathing()
       this._delay     = useDelayTimer()
       this._tap       = useTapGame()
-
-      // ── Community ──
       this._community = useCommunity()
+
       this.encouragementMessages = this._community.encouragementMessages.value
       this.leaderboard           = this._community.leaderboard.value
     },
 
     _syncStatsToData() {
       const s = this._statsComp
-      this.stats              = { ...s.stats.value }
-      this.dailySavings       = s.dailySavings.value
-      this.weeklySavings      = s.weeklySavings.value
-      this.monthlySavings     = s.monthlySavings.value
+      this.stats                 = { ...s.stats.value }
+      this.dailySavings          = s.dailySavings.value
+      this.weeklySavings         = s.weeklySavings.value
+      this.monthlySavings        = s.monthlySavings.value
       this.diseaseRiskMilestones = s.diseaseRiskMilestones.value
     },
 
     _syncLogToData() {
       const l = this._log
-      this.todayLogged       = l.todayLogged.value
-      this.todaySmoked       = l.todaySmoked.value
-      this.todayDateLabel    = l.todayDateLabel.value
-      this.currentStreak     = l.currentStreak.value
+      this.todayLogged        = l.todayLogged.value
+      this.todaySmoked        = l.todaySmoked.value
+      this.todayDateLabel     = l.todayDateLabel.value
+      this.currentStreak      = l.currentStreak.value
       this.totalSmokeFreedays = l.totalSmokeFreedays.value
-      this.dailyLogs         = l.dailyLogs.value
+      this.dailyLogs          = l.dailyLogs.value
+
+      // ── Sync todaySmokedCount from today's log entry ──────────────────────
+      const todayStr = (() => {
+        const now = new Date()
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      })()
+      const todayEntry = this.dailyLogs.find(l => l.date === todayStr)
+      this.todaySmokedCount = todayEntry?.smokedCount || 0
     },
 
     _syncBreathingToData() {
@@ -434,11 +441,11 @@ export default {
 
     _syncTapToData() {
       const t = this._tap
-      this.tapGameStarted  = t.tapGameStarted.value
-      this.tapGameDone     = t.tapGameDone.value
-      this.tapCount        = t.tapCount.value
-      this.tapTimeLeft     = t.tapTimeLeft.value
-      this.tapProgress     = t.tapProgress.value
+      this.tapGameStarted   = t.tapGameStarted.value
+      this.tapGameDone      = t.tapGameDone.value
+      this.tapCount         = t.tapCount.value
+      this.tapTimeLeft      = t.tapTimeLeft.value
+      this.tapProgress      = t.tapProgress.value
       this.tapResultMessage = t.tapResultMessage.value
     },
 
@@ -466,10 +473,9 @@ export default {
       this.pricePerPack     = pricePerPack
       this.hasStarted       = true
 
-      // Update composable refs
-      this._quitDateRef.value        = quitDate
+      this._quitDateRef.value         = quitDate
       this._cigarettesPerDayRef.value = cigarettesPerDay
-      this._pricePerPackRef.value    = pricePerPack
+      this._pricePerPackRef.value     = pricePerPack
 
       this._saveToStorage()
       this._recalc()
@@ -507,9 +513,9 @@ export default {
     // STATS
     // ════════════════════════════════════════════
     _recalc() {
-      this._quitDateRef.value        = this.quitDate
+      this._quitDateRef.value         = this.quitDate
       this._cigarettesPerDayRef.value = this.cigarettesPerDay
-      this._pricePerPackRef.value    = this.pricePerPack
+      this._pricePerPackRef.value     = this.pricePerPack
       this._statsComp.calculate()
       this._syncStatsToData()
     },
@@ -534,36 +540,56 @@ export default {
       this._syncLogToData()
     },
 
-    onLogDay(smoked) {
+    // ── Main handler — now receives { smoked, smokedCount } ─────────────────
+    onLogDay({ smoked, smokedCount = 0 }) {
       this._log.dailyLogs.value = this.dailyLogs
       this._log.logDay(smoked)
       this._syncLogToData()
+      this._recalc()
 
+      // ── Update local dailyLogs entry immediately so graph refreshes at once ──
+      const now   = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+      const existingIdx = this.dailyLogs.findIndex(l => l.date === today)
+      if (existingIdx >= 0) {
+        this.dailyLogs[existingIdx] = { date: today, smoked, smokedCount }
+      } else {
+        this.dailyLogs.push({ date: today, smoked, smokedCount })
+      }
+
+      // Mirror todaySmokedCount so DailyCheckIn shows the right label
+      this.todaySmokedCount = smoked ? smokedCount : 0
+
+      // ── Toast notification ────────────────────────────────────────────────
+      const avoided = smoked ? Math.max(0, Number(this.cigarettesPerDay) - smokedCount) : Number(this.cigarettesPerDay)
       this.$q.notify({
         color:    smoked ? 'orange-6' : 'green-6',
-        message:  smoked ? "That's okay. Every day is a fresh start. 💛" : `🎉 Great job! ${this.currentStreak} day streak!`,
+        message:  smoked
+          ? `You smoked ${smokedCount} today — ${avoided} still avoided! Tomorrow is a new start 💛`
+          : `🎉 Great job! ${this.currentStreak} day streak!`,
         icon:     smoked ? 'favorite' : 'emoji_events',
         position: 'center',
-        timeout:  3000,
+        timeout:  3500,
       })
 
-      // ── Persist to database ──────────────────────────────────────────────
-      const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+      // ── Persist to server ─────────────────────────────────────────────────
       if (this.isOnline && this.deviceId) {
-        userAPI.logDailyEntry(this.deviceId, today, smoked).catch((error) => {
+        userAPI.logDailyEntry(this.deviceId, today, smoked, smokedCount).catch((error) => {
           console.error('Daily log sync failed, queuing for retry:', error)
           this._sync.addToSyncQueue('daily_log', {
             deviceId: this.deviceId,
-            date: today,
+            date:     today,
             smoked,
+            smokedCount,
           })
         })
       } else {
-        // Offline — queue and sync when back online
         this._sync.addToSyncQueue('daily_log', {
           deviceId: this.deviceId,
-          date: today,
+          date:     today,
           smoked,
+          smokedCount,
         })
       }
 
@@ -628,13 +654,8 @@ export default {
       this._syncBreathingToData()
       this.showBreathingDialog = true
     },
-    startBreathing() {
-      this._breathing.startBreathing()
-      // Poll every second to sync to data (interval handles it)
-    },
-    stopBreathing() {
-      this._breathing.stopBreathing()
-    },
+    startBreathing() { this._breathing.startBreathing() },
+    stopBreathing()  { this._breathing.stopBreathing()  },
 
     openDelayDialog() {
       this._delay.resetDelayTimer()
@@ -706,7 +727,7 @@ export default {
     },
 
     openUserDetails(user) {
-      this.selectedUser  = user
+      this.selectedUser   = user
       this.showUserDialog = true
     },
 
@@ -715,32 +736,39 @@ export default {
       try {
         const users = await userAPI.getAllUsers()
         this.allUsers = users.map(u => ({
-          id: u.device_id, name: u.name, quitDate: u.quit_date,
-          cigarettesPerDay: u.cigarettes_per_day, pricePerPack: u.price_per_pack,
-          daysSmokeeFree: u.days_smoke_free, cigarettesAvoided: u.cigarettes_avoided,
-          moneySaved: u.money_saved, lastUpdated: u.last_updated,
-          opensToday: parseInt(u.opens_today) || 0,
-          opensThisMonth: parseInt(u.opens_this_month) || 0,
-          totalOpens: parseInt(u.total_opens) || 0,
-          lastAppOpen: u.last_app_open,
+          id:               u.device_id,
+          name:             u.name,
+          quitDate:         u.quit_date,
+          cigarettesPerDay: u.cigarettes_per_day,
+          pricePerPack:     u.price_per_pack,
+          daysSmokeeFree:   u.days_smoke_free,
+          cigarettesAvoided:u.cigarettes_avoided,
+          moneySaved:       u.money_saved,
+          lastUpdated:      u.last_updated,
+          opensToday:       parseInt(u.opens_today)      || 0,
+          opensThisMonth:   parseInt(u.opens_this_month) || 0,
+          totalOpens:       parseInt(u.total_opens)      || 0,
+          lastAppOpen:      u.last_app_open,
         }))
       } catch (error) { console.error(error) }
     },
 
-    // Fetch daily logs from the DB and merge with local logs (DB is source of truth)
     async _loadDailyLogs() {
       if (!this.isOnline || !this.deviceId) return
       try {
         const logs = await userAPI.getDailyLogs(this.deviceId)
-        // logs from API: [{ date: 'YYYY-MM-DD', smoked: true/false }, ...]
         if (Array.isArray(logs) && logs.length > 0) {
-          // Merge: DB wins over local for any matching date
           const dbMap = {}
-          logs.forEach(l => { dbMap[l.date] = l.smoked })
+          logs.forEach(l => { dbMap[l.date] = l })
           const localOnly = this.dailyLogs.filter(l => !Object.hasOwn(dbMap, l.date))
+          // Merge: DB wins — include smokedCount from DB
           this.dailyLogs = [
             ...localOnly,
-            ...logs.map(l => ({ date: l.date, smoked: l.smoked })),
+            ...logs.map(l => ({
+              date:        l.date,
+              smoked:      l.smoked,
+              smokedCount: l.smokedCount || 0,   // ← carry smokedCount from DB
+            })),
           ]
           this._log.dailyLogs.value = this.dailyLogs
           this._log.checkTodayLog()
@@ -763,7 +791,6 @@ export default {
           await this._sync.syncProgress(this.deviceId, this.stats.days, this.stats.cigarettesAvoided, this.stats.moneySaved)
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
         if (this.showAdmin && this.isAdmin) await this._loadAllUsers()
-        // Hydrate daily logs from DB so check-in state is always fresh
         if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
       } catch (error) { console.error(error) }
     },
@@ -787,7 +814,11 @@ export default {
     _onOffline() { this.isOnline = false },
 
     _sendBeacon() {
-      const payload = { daysSmokeeFree: this.stats.days, cigarettesAvoided: this.stats.cigarettesAvoided, moneySaved: parseFloat(this.stats.moneySaved.toFixed(2)) }
+      const payload = {
+        daysSmokeeFree:    this.stats.days,
+        cigarettesAvoided: this.stats.cigarettesAvoided,
+        moneySaved:        parseFloat(this.stats.moneySaved.toFixed(2)),
+      }
       const url = `${process.env.API_URL || 'http://localhost:3000/api'}/users/${this.deviceId}/progress`
       navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }))
     },
@@ -795,14 +826,20 @@ export default {
     _saveToStorage() {
       if (!this.deviceId) return
       LocalStorage.set('quit-smoking-data', {
-        deviceId: this.deviceId, userName: this.userName,
-        quitDate: this.quitDate, cigarettesPerDay: this.cigarettesPerDay, pricePerPack: this.pricePerPack,
-        hasStarted: this.hasStarted, stats: this.stats, lastCalculated: new Date().toISOString(),
-        dailyLogs: this.dailyLogs, notificationsEnabled: this.notificationsEnabled,
-        joinedChallenge: this.joinedChallenge,
-        myAlias:                 this._community?.myAlias?.value || '',
-        encouragementMessages:   this.encouragementMessages,
-        leaderboard:             this.leaderboard,
+        deviceId:         this.deviceId,
+        userName:         this.userName,
+        quitDate:         this.quitDate,
+        cigarettesPerDay: this.cigarettesPerDay,
+        pricePerPack:     this.pricePerPack,
+        hasStarted:       this.hasStarted,
+        stats:            this.stats,
+        lastCalculated:   new Date().toISOString(),
+        dailyLogs:        this.dailyLogs,           // ← includes smokedCount per entry
+        notificationsEnabled: this.notificationsEnabled,
+        joinedChallenge:  this.joinedChallenge,
+        myAlias:                this._community?.myAlias?.value || '',
+        encouragementMessages:  this.encouragementMessages,
+        leaderboard:            this.leaderboard,
       })
       LocalStorage.set('quit-smoking-sync-queue', this._sync?.syncQueue?.value || [])
     },
@@ -810,15 +847,15 @@ export default {
     _loadFromStorage() {
       const d = LocalStorage.getItem('quit-smoking-data')
       if (d) {
-        this.deviceId         = d.deviceId || ''
-        this.userName         = d.userName || ''
-        this.quitDate         = d.quitDate || ''
-        this.cigarettesPerDay = d.cigarettesPerDay || ''
-        this.pricePerPack     = d.pricePerPack || ''
-        this.hasStarted       = d.hasStarted || false
-        this.dailyLogs        = d.dailyLogs || []
+        this.deviceId             = d.deviceId         || ''
+        this.userName             = d.userName         || ''
+        this.quitDate             = d.quitDate         || ''
+        this.cigarettesPerDay     = d.cigarettesPerDay || ''
+        this.pricePerPack         = d.pricePerPack     || ''
+        this.hasStarted           = d.hasStarted       || false
+        this.dailyLogs            = d.dailyLogs        || []  // ← includes smokedCount
         this.notificationsEnabled = d.notificationsEnabled || false
-        this.joinedChallenge  = d.joinedChallenge || false
+        this.joinedChallenge      = d.joinedChallenge  || false
         if (d.encouragementMessages) this.encouragementMessages = d.encouragementMessages
         if (d.leaderboard)           this.leaderboard           = d.leaderboard
         if (d.myAlias && this._community) this._community.myAlias.value = d.myAlias
