@@ -67,6 +67,7 @@ const initDB = async () => {
       device_id VARCHAR(255) REFERENCES users(device_id) ON DELETE CASCADE,
       date DATE NOT NULL,
       smoked BOOLEAN NOT NULL,
+      smoked_count INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(device_id, date)
@@ -84,11 +85,13 @@ const initDB = async () => {
 
   try {
     await pool.query(createTableQuery);
+
     console.log("✅ Database tables initialized");
   } catch (error) {
     console.error("❌ Error initializing database:", error);
   }
 };
+
 
 initDB();
 
@@ -313,7 +316,7 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id)
        DO UPDATE SET
-         days_smoke_free   = EXCLUDED.days_smoke_free,
+         days_smoke_free    = EXCLUDED.days_smoke_free,
          cigarettes_avoided = EXCLUDED.cigarettes_avoided,
          money_saved        = EXCLUDED.money_saved,
          last_updated       = CURRENT_TIMESTAMP
@@ -338,22 +341,21 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
 
 /**
  * POST /api/users/:deviceId/daily-log
- * Body: { date: 'YYYY-MM-DD', smoked: boolean }
+ * Body: { date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }
  *
- * Upserts one daily check-in row per (device_id, date).
- * Re-logging the same day just updates the smoked value.
+ * smokedCount = 0 if smoke-free, otherwise how many cigarettes they smoked.
+ * Upserts one row per (device_id, date) — re-logging the same day updates it.
  */
 app.post("/api/users/:deviceId/daily-log", async (req, res) => {
   const { deviceId } = req.params;
-  const { date, smoked } = req.body;
+  const { date, smoked, smokedCount } = req.body;
 
-  console.log("📅 Daily log entry:", { deviceId, date, smoked });
+  console.log("📅 Daily log entry:", { deviceId, date, smoked, smokedCount });
 
   if (!date || smoked === undefined) {
     return res.status(400).json({ error: "date and smoked are required" });
   }
 
-  // Basic date format guard: YYYY-MM-DD
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return res.status(400).json({ error: "date must be in YYYY-MM-DD format" });
   }
@@ -368,15 +370,19 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
       return res.status(404).json({ error: "Device not found", message: "Please register first" });
     }
 
+    // If smoke-free, smokedCount is always 0
+    const count = smoked ? (parseInt(smokedCount) || 0) : 0;
+
     const result = await pool.query(
-      `INSERT INTO daily_logs (device_id, date, smoked, created_at, updated_at)
-       VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO daily_logs (device_id, date, smoked, smoked_count, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id, date)
        DO UPDATE SET
-         smoked     = EXCLUDED.smoked,
-         updated_at = CURRENT_TIMESTAMP
+         smoked       = EXCLUDED.smoked,
+         smoked_count = EXCLUDED.smoked_count,
+         updated_at   = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, date, smoked]
+      [deviceId, date, smoked, count]
     );
 
     console.log("✅ Daily log saved:", result.rows[0]);
@@ -395,7 +401,7 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
 /**
  * GET /api/users/:deviceId/daily-logs
  * Returns all daily log entries for a user, newest first.
- * Response: [{ date: 'YYYY-MM-DD', smoked: boolean }, ...]
+ * Response: [{ date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }, ...]
  */
 app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
   const { deviceId } = req.params;
@@ -414,8 +420,9 @@ app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
 
     const result = await pool.query(
       `SELECT
-         date::text AS date,
-         smoked
+         date::text                AS date,
+         smoked,
+         COALESCE(smoked_count, 0) AS "smokedCount"
        FROM daily_logs
        WHERE device_id = $1
        ORDER BY date DESC`,
@@ -456,7 +463,8 @@ app.get("/api/users", async (req, res) => {
         MAX(ao.opened_at)                                                                                        AS last_app_open,
         COUNT(dl.id) FILTER (WHERE dl.smoked = FALSE)  AS smoke_free_days_logged,
         COUNT(dl.id) FILTER (WHERE dl.smoked = TRUE)   AS smoked_days_logged,
-        COUNT(dl.id)                                   AS total_days_logged
+        COUNT(dl.id)                                   AS total_days_logged,
+        COALESCE(SUM(dl.smoked_count) FILTER (WHERE dl.smoked = TRUE), 0) AS total_cigarettes_smoked
       FROM users u
       LEFT JOIN user_progress p  ON u.device_id = p.device_id
       LEFT JOIN app_opens ao     ON u.device_id = ao.device_id
@@ -512,15 +520,15 @@ app.get("/api/debug/stats", async (req, res) => {
         pool.query("SELECT COUNT(*) FROM app_opens"),
         pool.query("SELECT COUNT(*) FROM daily_logs"),
         pool.query("SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
-        pool.query("SELECT device_id, date, smoked FROM daily_logs ORDER BY date DESC LIMIT 10"),
+        pool.query("SELECT device_id, date, smoked, smoked_count FROM daily_logs ORDER BY date DESC LIMIT 10"),
       ]);
 
     res.json({
-      totalUsers:     parseInt(userCount.rows[0].count),
-      totalProgress:  parseInt(progressCount.rows[0].count),
-      totalAppOpens:  parseInt(appOpensCount.rows[0].count),
-      totalDailyLogs: parseInt(dailyLogsCount.rows[0].count),
-      recentUsers:    recentUsers.rows,
+      totalUsers:      parseInt(userCount.rows[0].count),
+      totalProgress:   parseInt(progressCount.rows[0].count),
+      totalAppOpens:   parseInt(appOpensCount.rows[0].count),
+      totalDailyLogs:  parseInt(dailyLogsCount.rows[0].count),
+      recentUsers:     recentUsers.rows,
       recentDailyLogs: recentLogs.rows,
     });
   } catch (error) {
