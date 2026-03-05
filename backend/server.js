@@ -32,7 +32,7 @@ pool.connect((err, client, release) => {
   }
 });
 
-// Initialize database tables with app_opens tracking
+// Initialize database tables
 const initDB = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS users (
@@ -62,11 +62,24 @@ const initDB = async () => {
       is_online BOOLEAN DEFAULT TRUE
     );
 
-    CREATE INDEX IF NOT EXISTS idx_app_opens_device_date 
-    ON app_opens(device_id, DATE(opened_at));
-    
-    CREATE INDEX IF NOT EXISTS idx_app_opens_date 
-    ON app_opens(DATE(opened_at));
+    CREATE TABLE IF NOT EXISTS daily_logs (
+      id SERIAL PRIMARY KEY,
+      device_id VARCHAR(255) REFERENCES users(device_id) ON DELETE CASCADE,
+      date DATE NOT NULL,
+      smoked BOOLEAN NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(device_id, date)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_app_opens_device_date
+      ON app_opens(device_id, DATE(opened_at));
+
+    CREATE INDEX IF NOT EXISTS idx_app_opens_date
+      ON app_opens(DATE(opened_at));
+
+    CREATE INDEX IF NOT EXISTS idx_daily_logs_device_date
+      ON daily_logs(device_id, date);
   `;
 
   try {
@@ -79,14 +92,17 @@ const initDB = async () => {
 
 initDB();
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Routes
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
 
-// NEW: Track app open
+// ── App opens ─────────────────────────────────────────────────────────────────
+
 app.post("/api/users/:deviceId/app-open", async (req, res) => {
   const { deviceId } = req.params;
   const { isOnline } = req.body;
@@ -94,10 +110,9 @@ app.post("/api/users/:deviceId/app-open", async (req, res) => {
   console.log("📱 App opened:", { deviceId, isOnline });
 
   try {
-    // Check if device exists
     const userCheck = await pool.query(
       "SELECT device_id FROM users WHERE device_id = $1",
-      [deviceId],
+      [deviceId]
     );
 
     if (userCheck.rows.length === 0) {
@@ -108,12 +123,11 @@ app.post("/api/users/:deviceId/app-open", async (req, res) => {
       });
     }
 
-    // Record app open
     const result = await pool.query(
       `INSERT INTO app_opens (device_id, opened_at, is_online)
        VALUES ($1, CURRENT_TIMESTAMP, $2)
        RETURNING *`,
-      [deviceId, isOnline !== false], // Default to true if not specified
+      [deviceId, isOnline !== false]
     );
 
     console.log("✅ App open recorded:", result.rows[0]);
@@ -125,14 +139,10 @@ app.post("/api/users/:deviceId/app-open", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error recording app open:", error);
-    res.status(500).json({
-      error: "Failed to record app open",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to record app open", details: error.message });
   }
 });
 
-// NEW: Get app opens statistics for a user
 app.get("/api/users/:deviceId/app-opens", async (req, res) => {
   const { deviceId } = req.params;
 
@@ -140,106 +150,78 @@ app.get("/api/users/:deviceId/app-opens", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT 
-        COUNT(*) FILTER (WHERE DATE(opened_at) = CURRENT_DATE) as opens_today,
-        COUNT(*) FILTER (WHERE DATE_TRUNC('month', opened_at) = DATE_TRUNC('month', CURRENT_DATE)) as opens_this_month,
-        COUNT(*) as total_opens,
-        MAX(opened_at) as last_opened
+      `SELECT
+        COUNT(*) FILTER (WHERE DATE(opened_at) = CURRENT_DATE) AS opens_today,
+        COUNT(*) FILTER (WHERE DATE_TRUNC('month', opened_at) = DATE_TRUNC('month', CURRENT_DATE)) AS opens_this_month,
+        COUNT(*) AS total_opens,
+        MAX(opened_at) AS last_opened
        FROM app_opens
        WHERE device_id = $1`,
-      [deviceId],
+      [deviceId]
     );
-
-    console.log("✅ App opens stats:", result.rows[0]);
 
     res.json({
       success: true,
       stats: {
-        opensToday: parseInt(result.rows[0].opens_today) || 0,
+        opensToday:     parseInt(result.rows[0].opens_today)      || 0,
         opensThisMonth: parseInt(result.rows[0].opens_this_month) || 0,
-        totalOpens: parseInt(result.rows[0].total_opens) || 0,
-        lastOpened: result.rows[0].last_opened,
+        totalOpens:     parseInt(result.rows[0].total_opens)      || 0,
+        lastOpened:     result.rows[0].last_opened,
       },
     });
   } catch (error) {
     console.error("❌ Error fetching app opens:", error);
-    res.status(500).json({
-      error: "Failed to fetch app opens",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to fetch app opens", details: error.message });
   }
 });
 
-// Register new user
+// ── Registration & setup ──────────────────────────────────────────────────────
+
 app.post("/api/users/register", async (req, res) => {
   const { deviceId, userName } = req.body;
 
   console.log("📝 Registration request:", { deviceId, userName });
 
   if (!deviceId || !userName) {
-    return res
-      .status(400)
-      .json({ error: "deviceId and userName are required" });
+    return res.status(400).json({ error: "deviceId and userName are required" });
   }
 
   try {
     const result = await pool.query(
       `INSERT INTO users (device_id, name, created_at, updated_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       ON CONFLICT (device_id) 
-       DO UPDATE SET 
+       ON CONFLICT (device_id)
+       DO UPDATE SET
          name = EXCLUDED.name,
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, userName],
+      [deviceId, userName]
     );
 
     const isNewUser = result.rows[0].created_at === result.rows[0].updated_at;
 
-    console.log(
-      isNewUser ? "✅ New device registered:" : "✅ Existing device updated:",
-      deviceId,
-    );
+    console.log(isNewUser ? "✅ New device registered:" : "✅ Existing device updated:", deviceId);
 
     res.json({
       success: true,
       deviceId,
       userName,
       isNewUser,
-      message: isNewUser
-        ? "Device registered successfully"
-        : "Device information updated",
+      message: isNewUser ? "Device registered successfully" : "Device information updated",
       user: result.rows[0],
     });
   } catch (error) {
     console.error("❌ Error registering device:", error);
-    res.status(500).json({
-      error: "Failed to register device",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to register device", details: error.message });
   }
 });
 
-// Start tracking
 app.post("/api/users/start", async (req, res) => {
-  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
-    req.body;
+  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } = req.body;
 
-  console.log("🚀 Start tracking request:", {
-    deviceId,
-    userName,
-    quitDate,
-    cigarettesPerDay,
-    pricePerPack,
-  });
+  console.log("🚀 Start tracking request:", { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack });
 
-  if (
-    !deviceId ||
-    !userName ||
-    !quitDate ||
-    !cigarettesPerDay ||
-    !pricePerPack
-  ) {
+  if (!deviceId || !userName || !quitDate || !cigarettesPerDay || !pricePerPack) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -247,46 +229,36 @@ app.post("/api/users/start", async (req, res) => {
     const result = await pool.query(
       `INSERT INTO users (device_id, name, quit_date, cigarettes_per_day, price_per_pack, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-       ON CONFLICT (device_id) 
-       DO UPDATE SET 
+       ON CONFLICT (device_id)
+       DO UPDATE SET
          name = EXCLUDED.name,
          quit_date = EXCLUDED.quit_date,
          cigarettes_per_day = EXCLUDED.cigarettes_per_day,
          price_per_pack = EXCLUDED.price_per_pack,
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack],
+      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack]
     );
 
     const userData = result.rows[0];
     const isNewTracking = userData.created_at === userData.updated_at;
 
-    console.log(
-      isNewTracking
-        ? "✅ New tracking started for device:"
-        : "✅ Tracking updated for device:",
-      deviceId,
-    );
-    console.log("📊 User data:", userData);
+    console.log(isNewTracking ? "✅ New tracking started:" : "✅ Tracking updated:", deviceId);
 
     res.json({
       success: true,
-      message: isNewTracking
-        ? "Tracking started successfully"
-        : "Tracking updated successfully",
+      message: isNewTracking ? "Tracking started successfully" : "Tracking updated successfully",
       isNewTracking,
       user: userData,
     });
   } catch (error) {
     console.error("❌ Error starting tracking:", error);
-    res.status(500).json({
-      error: "Failed to start tracking",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to start tracking", details: error.message });
   }
 });
 
-// Get user data by deviceId
+// ── User data & progress ──────────────────────────────────────────────────────
+
 app.get("/api/users/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
 
@@ -294,81 +266,62 @@ app.get("/api/users/:deviceId", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT u.*, 
-              COALESCE(p.days_smoke_free, 0) as days_smoke_free,
-              COALESCE(p.cigarettes_avoided, 0) as cigarettes_avoided,
-              COALESCE(p.money_saved, 0) as money_saved,
-              COALESCE(p.last_updated, u.updated_at) as progress_updated
+      `SELECT u.*,
+              COALESCE(p.days_smoke_free, 0)    AS days_smoke_free,
+              COALESCE(p.cigarettes_avoided, 0) AS cigarettes_avoided,
+              COALESCE(p.money_saved, 0)         AS money_saved,
+              COALESCE(p.last_updated, u.updated_at) AS progress_updated
        FROM users u
        LEFT JOIN user_progress p ON u.device_id = p.device_id
        WHERE u.device_id = $1`,
-      [deviceId],
+      [deviceId]
     );
 
     if (result.rows.length === 0) {
-      console.log("⚠️ Device not found:", deviceId);
       return res.status(404).json({ error: "Device not found" });
     }
 
-    console.log("✅ Device found:", result.rows[0]);
     res.json(result.rows[0]);
   } catch (error) {
     console.error("❌ Error fetching device:", error);
-    res.status(500).json({
-      error: "Failed to fetch device data",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to fetch device data", details: error.message });
   }
 });
 
-// Update progress by deviceId
 app.post("/api/users/:deviceId/progress", async (req, res) => {
   const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
 
-  console.log("📈 Progress update request:", {
-    deviceId,
-    daysSmokeeFree,
-    cigarettesAvoided,
-    moneySaved,
-  });
+  console.log("📈 Progress update:", { deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved });
 
-  if (
-    daysSmokeeFree === undefined ||
-    cigarettesAvoided === undefined ||
-    moneySaved === undefined
-  ) {
+  if (daysSmokeeFree === undefined || cigarettesAvoided === undefined || moneySaved === undefined) {
     return res.status(400).json({ error: "All progress fields are required" });
   }
 
   try {
     const userCheck = await pool.query(
       "SELECT device_id FROM users WHERE device_id = $1",
-      [deviceId],
+      [deviceId]
     );
 
     if (userCheck.rows.length === 0) {
-      console.log("⚠️ Device not found for progress update:", deviceId);
-      return res.status(404).json({
-        error: "Device not found",
-        message: "Please register and start tracking first",
-      });
+      return res.status(404).json({ error: "Device not found", message: "Please register and start tracking first" });
     }
 
     const result = await pool.query(
       `INSERT INTO user_progress (device_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id)
-       DO UPDATE SET 
-         days_smoke_free = EXCLUDED.days_smoke_free,
+       DO UPDATE SET
+         days_smoke_free   = EXCLUDED.days_smoke_free,
          cigarettes_avoided = EXCLUDED.cigarettes_avoided,
-         money_saved = EXCLUDED.money_saved,
-         last_updated = CURRENT_TIMESTAMP
+         money_saved        = EXCLUDED.money_saved,
+         last_updated       = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved],
+      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved]
     );
 
-    console.log("✅ Progress updated successfully:", result.rows[0]);
+    console.log("✅ Progress updated:", result.rows[0]);
 
     res.json({
       success: true,
@@ -377,20 +330,115 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating progress:", error);
-    res.status(500).json({
-      error: "Failed to update progress",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to update progress", details: error.message });
   }
 });
 
-// Get all users (for admin) - UPDATED with app opens stats
+// ── Daily log ─────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/users/:deviceId/daily-log
+ * Body: { date: 'YYYY-MM-DD', smoked: boolean }
+ *
+ * Upserts one daily check-in row per (device_id, date).
+ * Re-logging the same day just updates the smoked value.
+ */
+app.post("/api/users/:deviceId/daily-log", async (req, res) => {
+  const { deviceId } = req.params;
+  const { date, smoked } = req.body;
+
+  console.log("📅 Daily log entry:", { deviceId, date, smoked });
+
+  if (!date || smoked === undefined) {
+    return res.status(400).json({ error: "date and smoked are required" });
+  }
+
+  // Basic date format guard: YYYY-MM-DD
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: "date must be in YYYY-MM-DD format" });
+  }
+
+  try {
+    const userCheck = await pool.query(
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Device not found", message: "Please register first" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO daily_logs (device_id, date, smoked, created_at, updated_at)
+       VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT (device_id, date)
+       DO UPDATE SET
+         smoked     = EXCLUDED.smoked,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [deviceId, date, smoked]
+    );
+
+    console.log("✅ Daily log saved:", result.rows[0]);
+
+    res.json({
+      success: true,
+      message: "Daily log saved",
+      log: result.rows[0],
+    });
+  } catch (error) {
+    console.error("❌ Error saving daily log:", error);
+    res.status(500).json({ error: "Failed to save daily log", details: error.message });
+  }
+});
+
+/**
+ * GET /api/users/:deviceId/daily-logs
+ * Returns all daily log entries for a user, newest first.
+ * Response: [{ date: 'YYYY-MM-DD', smoked: boolean }, ...]
+ */
+app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
+  const { deviceId } = req.params;
+
+  console.log("📋 Get daily logs for:", deviceId);
+
+  try {
+    const userCheck = await pool.query(
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId]
+    );
+
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+
+    const result = await pool.query(
+      `SELECT
+         date::text AS date,
+         smoked
+       FROM daily_logs
+       WHERE device_id = $1
+       ORDER BY date DESC`,
+      [deviceId]
+    );
+
+    console.log(`✅ Found ${result.rows.length} daily log entries for ${deviceId}`);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Error fetching daily logs:", error);
+    res.status(500).json({ error: "Failed to fetch daily logs", details: error.message });
+  }
+});
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
 app.get("/api/users", async (req, res) => {
   console.log("👥 Get all users request");
 
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
         u.device_id,
         u.name,
         u.quit_date,
@@ -398,17 +446,21 @@ app.get("/api/users", async (req, res) => {
         u.price_per_pack,
         u.created_at,
         u.updated_at,
-        COALESCE(p.days_smoke_free, 0) as days_smoke_free,
-        COALESCE(p.cigarettes_avoided, 0) as cigarettes_avoided,
-        COALESCE(p.money_saved, 0) as money_saved,
-        COALESCE(p.last_updated, u.updated_at) as last_updated,
-        COUNT(ao.id) FILTER (WHERE DATE(ao.opened_at) = CURRENT_DATE) as opens_today,
-        COUNT(ao.id) FILTER (WHERE DATE_TRUNC('month', ao.opened_at) = DATE_TRUNC('month', CURRENT_DATE)) as opens_this_month,
-        COUNT(ao.id) as total_opens,
-        MAX(ao.opened_at) as last_app_open
+        COALESCE(p.days_smoke_free, 0)    AS days_smoke_free,
+        COALESCE(p.cigarettes_avoided, 0) AS cigarettes_avoided,
+        COALESCE(p.money_saved, 0)         AS money_saved,
+        COALESCE(p.last_updated, u.updated_at) AS last_updated,
+        COUNT(ao.id) FILTER (WHERE DATE(ao.opened_at) = CURRENT_DATE)                                           AS opens_today,
+        COUNT(ao.id) FILTER (WHERE DATE_TRUNC('month', ao.opened_at) = DATE_TRUNC('month', CURRENT_DATE))       AS opens_this_month,
+        COUNT(ao.id)                                                                                             AS total_opens,
+        MAX(ao.opened_at)                                                                                        AS last_app_open,
+        COUNT(dl.id) FILTER (WHERE dl.smoked = FALSE)  AS smoke_free_days_logged,
+        COUNT(dl.id) FILTER (WHERE dl.smoked = TRUE)   AS smoked_days_logged,
+        COUNT(dl.id)                                   AS total_days_logged
       FROM users u
-      LEFT JOIN user_progress p ON u.device_id = p.device_id
-      LEFT JOIN app_opens ao ON u.device_id = ao.device_id
+      LEFT JOIN user_progress p  ON u.device_id = p.device_id
+      LEFT JOIN app_opens ao     ON u.device_id = ao.device_id
+      LEFT JOIN daily_logs dl    ON u.device_id = dl.device_id
       GROUP BY u.device_id, p.id
       ORDER BY p.days_smoke_free DESC NULLS LAST
     `);
@@ -417,14 +469,10 @@ app.get("/api/users", async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching all users:", error);
-    res.status(500).json({
-      error: "Failed to fetch users",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to fetch users", details: error.message });
   }
 });
 
-// Delete user by deviceId
 app.delete("/api/users/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
 
@@ -433,15 +481,15 @@ app.delete("/api/users/:deviceId", async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM users WHERE device_id = $1 RETURNING *",
-      [deviceId],
+      [deviceId]
     );
 
     if (result.rows.length === 0) {
-      console.log("⚠️ Device not found for deletion:", deviceId);
       return res.status(404).json({ error: "Device not found" });
     }
 
-    console.log("✅ Device deleted successfully:", deviceId);
+    console.log("✅ Device deleted:", deviceId);
+
     res.json({
       success: true,
       message: "Device data deleted",
@@ -449,41 +497,39 @@ app.delete("/api/users/:deviceId", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error deleting device:", error);
-    res.status(500).json({
-      error: "Failed to delete device",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to delete device", details: error.message });
   }
 });
 
-// Debug endpoint
+// ── Debug ─────────────────────────────────────────────────────────────────────
+
 app.get("/api/debug/stats", async (req, res) => {
   try {
-    const userCount = await pool.query("SELECT COUNT(*) FROM users");
-    const progressCount = await pool.query(
-      "SELECT COUNT(*) FROM user_progress",
-    );
-    const appOpensCount = await pool.query("SELECT COUNT(*) FROM app_opens");
-    const recentUsers = await pool.query(
-      "SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5",
-    );
-    const recentOpens = await pool.query(
-      "SELECT device_id, opened_at, is_online FROM app_opens ORDER BY opened_at DESC LIMIT 10",
-    );
+    const [userCount, progressCount, appOpensCount, dailyLogsCount, recentUsers, recentLogs] =
+      await Promise.all([
+        pool.query("SELECT COUNT(*) FROM users"),
+        pool.query("SELECT COUNT(*) FROM user_progress"),
+        pool.query("SELECT COUNT(*) FROM app_opens"),
+        pool.query("SELECT COUNT(*) FROM daily_logs"),
+        pool.query("SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
+        pool.query("SELECT device_id, date, smoked FROM daily_logs ORDER BY date DESC LIMIT 10"),
+      ]);
 
     res.json({
-      totalUsers: parseInt(userCount.rows[0].count),
-      totalProgress: parseInt(progressCount.rows[0].count),
-      totalAppOpens: parseInt(appOpensCount.rows[0].count),
-      recentUsers: recentUsers.rows,
-      recentAppOpens: recentOpens.rows,
+      totalUsers:     parseInt(userCount.rows[0].count),
+      totalProgress:  parseInt(progressCount.rows[0].count),
+      totalAppOpens:  parseInt(appOpensCount.rows[0].count),
+      totalDailyLogs: parseInt(dailyLogsCount.rows[0].count),
+      recentUsers:    recentUsers.rows,
+      recentDailyLogs: recentLogs.rows,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Start server
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 API Base URL: http://localhost:${PORT}/api`);
