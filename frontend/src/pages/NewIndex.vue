@@ -360,20 +360,19 @@ export default {
     // ════════════════════════════════════════════
     _initComposables() {
 
-      const quitDateRef         = ref(this.quitDate)
+      const quitDateRef        = ref(this.quitDate)
       const cigarettesPerDayRef = ref(this.cigarettesPerDay)
-      const pricePerPackRef     = ref(this.pricePerPack)
+      const pricePerPackRef    = ref(this.pricePerPack)
 
-      // ── Daily log (init first so we can pass its ref into stats) ──
-      const log = useDailyLog()
-      log.dailyLogs.value = this.dailyLogs   // seed from localStorage
-      this._log = log
-
-      // ── Stats — receives dailyLogs ref so days reflects actual smoke-free days ──
-      this._statsComp = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
-      this._quitDateRef         = quitDateRef
+      // ── Stats ──
+      this._statsComp = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef)
+      this._quitDateRef        = quitDateRef
       this._cigarettesPerDayRef = cigarettesPerDayRef
-      this._pricePerPackRef     = pricePerPackRef
+      this._pricePerPackRef    = pricePerPackRef
+
+      // ── Daily log ──
+      const log = useDailyLog()
+      this._log = log
 
       // ── Sync ──
       this._sync = useSync()
@@ -546,27 +545,6 @@ export default {
         position: 'center',
         timeout:  3000,
       })
-
-      // ── Persist to database ──────────────────────────────────────────────
-      const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
-      if (this.isOnline && this.deviceId) {
-        userAPI.logDailyEntry(this.deviceId, today, smoked).catch((error) => {
-          console.error('Daily log sync failed, queuing for retry:', error)
-          this._sync.addToSyncQueue('daily_log', {
-            deviceId: this.deviceId,
-            date: today,
-            smoked,
-          })
-        })
-      } else {
-        // Offline — queue and sync when back online
-        this._sync.addToSyncQueue('daily_log', {
-          deviceId: this.deviceId,
-          date: today,
-          smoked,
-        })
-      }
-
       this._saveToStorage()
     },
 
@@ -727,29 +705,6 @@ export default {
       } catch (error) { console.error(error) }
     },
 
-    // Fetch daily logs from the DB and merge with local logs (DB is source of truth)
-    async _loadDailyLogs() {
-      if (!this.isOnline || !this.deviceId) return
-      try {
-        const logs = await userAPI.getDailyLogs(this.deviceId)
-        // logs from API: [{ date: 'YYYY-MM-DD', smoked: true/false }, ...]
-        if (Array.isArray(logs) && logs.length > 0) {
-          // Merge: DB wins over local for any matching date
-          const dbMap = {}
-          logs.forEach(l => { dbMap[l.date] = l.smoked })
-          const localOnly = this.dailyLogs.filter(l => !Object.hasOwn(dbMap, l.date))
-          this.dailyLogs = [
-            ...localOnly,
-            ...logs.map(l => ({ date: l.date, smoked: l.smoked })),
-          ]
-          this._log.dailyLogs.value = this.dailyLogs
-          this._log.checkTodayLog()
-          this._syncLogToData()
-          this._saveToStorage()
-        }
-      } catch (error) { console.error(error) }
-    },
-
     // ════════════════════════════════════════════
     // SYNC / STORAGE
     // ════════════════════════════════════════════
@@ -763,8 +718,6 @@ export default {
           await this._sync.syncProgress(this.deviceId, this.stats.days, this.stats.cigarettesAvoided, this.stats.moneySaved)
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
         if (this.showAdmin && this.isAdmin) await this._loadAllUsers()
-        // Hydrate daily logs from DB so check-in state is always fresh
-        if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
       } catch (error) { console.error(error) }
     },
 

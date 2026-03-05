@@ -1,1 +1,86 @@
-// app global css in SCSS form
+.bg-gradient { background: #f5f5f5; min-height: 100vh; }
+.bg-gradient-blue { background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04); }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,.25); }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05); }
+.hover-lift { transition: transform .3s ease, box-shadow .3s ease; }
+.hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,.2); }
+.opacity-80 { opacity: .8; }
+.opacity-50 { opacity: .5; }
+
+/* ── Breathing circle ── */
+.breathing-circle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+}
+.breathing-circle {
+  border-radius: 50%;
+  background: linear-gradient(135deg, #26a69a, #00796b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 1s ease, height 1s ease;
+  box-shadow: 0 0 30px rgba(38,166,154,.4);
+}
+.breathing-circle.inhale { width: 150px; height: 150px; }
+.breathing-circle.hold { width: 150px; height: 150px; }
+.breathing-circle.exhale { width: 100px; height: 100px; }
+
+/* ── Delay timer display ── */
+.delay-timer-display { font-variant-numeric: tabular-nums; letter-spacing: 0.05em; }
+
+/* ── Graph ── */
+.graph-container { padding: 8px; }
+
+/* ── Encouragement wall ── */
+.encouragement-wall { max-height: 220px; overflow-y: auto; border-radius: 8px; }
+.encouragement-msg { border-radius: 8px; }
+
+/* ── Animations ── */
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .7 } }
+
+.animate-fade-in { animation: fadeIn .5s ease-out; }
+.animate-slide-up { animation: slideUp .5s ease-out forwards; opacity: 0; }
+.animate-bounce { animation: bounce 2s ease-in-out infinite; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+.delay-1 { animation-delay: .1s; }
+.delay-2 { animation-delay: .2s; }
+.delay-3 { animation-delay: .3s; }
+.delay-4 { animation-delay: .4s; }
+
+/* ── Registration card ── */
+.registration-card { border-radius: 16px; overflow: hidden; background: linear-gradient(to bottom,#fff 0%,#f8f9fa 100%); }
+.logo-image { width:100%; height:auto; max-width:110px; max-height:110px; object-fit:contain; filter:drop-shadow(0 4px 12px rgba(0,0,0,.08)); transition:transform .3s ease; }
+.logo-image:hover { transform: scale(1.05); }
+.logo-divider { width:2px; height:60px; background:linear-gradient(to bottom,transparent 0%,#e0e0e0 20%,#e0e0e0 80%,transparent 100%); }
+.welcome-text { font-family:'Roboto',sans-serif; letter-spacing:-.5px; line-height:1.2; }
+.tagline-text { font-weight:400; line-height:1.6; max-width:320px; margin:0 auto; }
+.input-modern { font-size:16px; }
+.input-modern :deep(.q-field__control) { border-radius:12px; }
+.modern-button { border-radius:12px; padding:14px 0; font-weight:600; font-size:16px; letter-spacing:.3px; transition:all .3s ease; box-shadow:0 4px 12px rgba(33,150,243,.25); }
+.modern-button:hover:not([disabled]) { transform:translateY(-2px); box-shadow:0 6px 20px rgba(33,150,243,.35); }
+
+/* Tap button */
+.tap-button { display: flex; justify-content: center; }
+.tap-btn-animate { transition: transform 0.05s; }
+.tap-btn-animate:active { transform: scale(0.9); }
+
+@media (max-width:599px) {
+  .logo-image { max-width:75px; max-height:75px; }
+  .logo-divider { height:45px; }
+  .welcome-text { font-size:2rem; }
+  .tagline-text { font-size:.9rem; }
+}
+@media (min-width:600px) and (max-width:1023px) {
+  .logo-image { max-width:95px; max-height:95px; }
+  .logo-divider { height:55px; }
+}
+@media (min-width:1024px) {
+  .logo-image { max-width:120px; max-height:120px; }
+  .logo-divider { height:70px; }
+}

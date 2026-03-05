@@ -1,18 +1,22 @@
-// src/services/api.js - FIXED VERSION
+// src/services/api.js
 import axios from 'axios'
 
-const API_BASE_URL = process.env.API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = process.env.API_URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
 })
 
 api.interceptors.request.use(
   (config) => {
+    const fullUrl = `${config.baseURL || ''}${config.url}`
+    console.log(`🚀 Calling Endpoint: [${config.method.toUpperCase()}] ${fullUrl}`)
+    if (config.data) {
+      console.log('📦 Request Data:', config.data)
+    }
     return config
   },
   (error) => {
@@ -22,9 +26,7 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   (error) => {
     console.error('❌ API Error:', error.response?.data || error.message)
     return Promise.reject(error)
@@ -32,12 +34,11 @@ api.interceptors.response.use(
 )
 
 export const userAPI = {
-  // Record app open
+
+  // ── App opens ──────────────────────────────────────────────────────────────
   async recordAppOpen(deviceId, isOnline = true) {
     try {
-      const response = await api.post(`/users/${deviceId}/app-open`, {
-        isOnline,
-      })
+      const response = await api.post(`/users/${deviceId}/app-open`, { isOnline })
       return response.data
     } catch (error) {
       console.error('❌ Record app open failed:', error)
@@ -45,7 +46,6 @@ export const userAPI = {
     }
   },
 
-  // Get app opens statistics
   async getAppOpens(deviceId) {
     try {
       const response = await api.get(`/users/${deviceId}/app-opens`)
@@ -56,12 +56,10 @@ export const userAPI = {
     }
   },
 
+  // ── Registration & setup ───────────────────────────────────────────────────
   async register(deviceId, userName) {
     try {
-      const response = await api.post('/users/register', {
-        deviceId,
-        userName,
-      })
+      const response = await api.post('/users/register', { deviceId, userName })
       return response.data
     } catch (error) {
       console.error('❌ Register failed:', error)
@@ -72,11 +70,7 @@ export const userAPI = {
   async startTracking(deviceId, userName, quitDate, cigarettesPerDay, pricePerPack) {
     try {
       const response = await api.post('/users/start', {
-        deviceId,
-        userName,
-        quitDate,
-        cigarettesPerDay,
-        pricePerPack,
+        deviceId, userName, quitDate, cigarettesPerDay, pricePerPack,
       })
       return response.data
     } catch (error) {
@@ -85,6 +79,7 @@ export const userAPI = {
     }
   },
 
+  // ── User data ──────────────────────────────────────────────────────────────
   async getUser(deviceId) {
     try {
       const response = await api.get(`/users/${deviceId}`)
@@ -98,9 +93,7 @@ export const userAPI = {
   async updateProgress(deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved) {
     try {
       const response = await api.post(`/users/${deviceId}/progress`, {
-        daysSmokeeFree,
-        cigarettesAvoided,
-        moneySaved,
+        daysSmokeeFree, cigarettesAvoided, moneySaved,
       })
       return response.data
     } catch (error) {
@@ -125,6 +118,38 @@ export const userAPI = {
       return response.data
     } catch (error) {
       console.error('❌ Delete user failed:', error)
+      throw error
+    }
+  },
+
+  // ── Daily check-in log ─────────────────────────────────────────────────────
+
+  /**
+   * Save (or upsert) a daily smoke check-in to the database.
+   * POST /users/:deviceId/daily-log
+   * Body: { date: 'YYYY-MM-DD', smoked: boolean }
+   */
+  async logDailyEntry(deviceId, date, smoked) {
+    try {
+      const response = await api.post(`/users/${deviceId}/daily-log`, { date, smoked })
+      return response.data
+    } catch (error) {
+      console.error('❌ Log daily entry failed:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Fetch all daily log entries for a user.
+   * GET /users/:deviceId/daily-logs
+   * Returns: [{ date: 'YYYY-MM-DD', smoked: boolean }, ...]
+   */
+  async getDailyLogs(deviceId) {
+    try {
+      const response = await api.get(`/users/${deviceId}/daily-logs`)
+      return response.data
+    } catch (error) {
+      console.error('❌ Get daily logs failed:', error)
       throw error
     }
   },
