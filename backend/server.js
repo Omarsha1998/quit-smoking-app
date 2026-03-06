@@ -456,15 +456,17 @@ app.post("/api/community/challenge/join", async (req, res) => {
   }
 });
 
-// GET leaderboard — participants ranked by their smoke-free days (from user_progress)
-// Returns alias and days only — no device_id or personal info
+// GET leaderboard — participants ranked by smoke-free days
+// Returns real name (from users table) + days
+// Encouragement wall stays alias-only; leaderboard uses real name so users can find themselves
 app.get("/api/community/leaderboard", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
-         cc.alias,
+         u.name,
          COALESCE(p.days_smoke_free, 0) AS days
        FROM community_challenge cc
+       JOIN users u ON cc.device_id = u.device_id
        LEFT JOIN user_progress p ON cc.device_id = p.device_id
        ORDER BY days DESC
        LIMIT 20`
