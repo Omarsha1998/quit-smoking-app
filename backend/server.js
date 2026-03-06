@@ -85,15 +85,43 @@ const initDB = async () => {
 
   try {
     await pool.query(createTableQuery);
-
     console.log("✅ Database tables initialized");
   } catch (error) {
     console.error("❌ Error initializing database:", error);
   }
 };
 
-
 initDB();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin middleware
+// Reads device_id from the x-device-id request header.
+// Queries the DB — if is_admin is not true, returns 403 immediately.
+// Attach to any route that should be admin-only.
+// ─────────────────────────────────────────────────────────────────────────────
+const requireAdmin = async (req, res, next) => {
+  const deviceId = req.headers["x-device-id"];
+
+  if (!deviceId) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT is_admin FROM users WHERE device_id = $1",
+      [deviceId]
+    );
+
+    if (!result.rows[0] || result.rows[0].is_admin !== true) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    next();
+  } catch (error) {
+    console.error("❌ Admin check failed:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Routes
@@ -339,13 +367,6 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
 
 // ── Daily log ─────────────────────────────────────────────────────────────────
 
-/**
- * POST /api/users/:deviceId/daily-log
- * Body: { date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }
- *
- * smokedCount = 0 if smoke-free, otherwise how many cigarettes they smoked.
- * Upserts one row per (device_id, date) — re-logging the same day updates it.
- */
 app.post("/api/users/:deviceId/daily-log", async (req, res) => {
   const { deviceId } = req.params;
   const { date, smoked, smokedCount } = req.body;
@@ -370,7 +391,6 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
       return res.status(404).json({ error: "Device not found", message: "Please register first" });
     }
 
-    // If smoke-free, smokedCount is always 0
     const count = smoked ? (parseInt(smokedCount) || 0) : 0;
 
     const result = await pool.query(
@@ -398,11 +418,6 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
   }
 });
 
-/**
- * GET /api/users/:deviceId/daily-logs
- * Returns all daily log entries for a user, newest first.
- * Response: [{ date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }, ...]
- */
 app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
   const { deviceId } = req.params;
 
@@ -440,8 +455,35 @@ app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
-app.get("/api/users", async (req, res) => {
-  console.log("👥 Get all users request");
+// Check if a device is admin — called silently by the frontend on load
+// Returns { isAdmin: true } or { isAdmin: false }
+// This only controls UI visibility — the real gate is /api/admin/users below
+app.get("/api/users/:deviceId/is-admin", async (req, res) => {
+  const { deviceId } = req.params;
+
+  console.log("🔐 Admin check for:", deviceId);
+
+  try {
+    const result = await pool.query(
+      "SELECT is_admin FROM users WHERE device_id = $1",
+      [deviceId]
+    );
+
+    const isAdmin = result.rows[0]?.is_admin === true;
+    console.log(`🔐 Admin check result for ${deviceId}:`, isAdmin);
+
+    res.json({ isAdmin });
+  } catch (error) {
+    console.error("❌ Admin check failed:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Get all users — ADMIN ONLY
+// Protected by requireAdmin middleware — checks is_admin = true in DB via x-device-id header
+// Returns 403 for any device not flagged as admin, regardless of what the frontend says
+app.get("/api/admin/users", requireAdmin, async (req, res) => {
+  console.log("👥 Admin: get all users");
 
   try {
     const result = await pool.query(`
@@ -453,27 +495,27 @@ app.get("/api/users", async (req, res) => {
         u.price_per_pack,
         u.created_at,
         u.updated_at,
-        COALESCE(p.days_smoke_free, 0)    AS days_smoke_free,
-        COALESCE(p.cigarettes_avoided, 0) AS cigarettes_avoided,
-        COALESCE(p.money_saved, 0)         AS money_saved,
+        COALESCE(p.days_smoke_free, 0)         AS days_smoke_free,
+        COALESCE(p.cigarettes_avoided, 0)      AS cigarettes_avoided,
+        COALESCE(p.money_saved, 0)             AS money_saved,
         COALESCE(p.last_updated, u.updated_at) AS last_updated,
-        COUNT(ao.id) FILTER (WHERE DATE(ao.opened_at) = CURRENT_DATE)                                           AS opens_today,
-        COUNT(ao.id) FILTER (WHERE DATE_TRUNC('month', ao.opened_at) = DATE_TRUNC('month', CURRENT_DATE))       AS opens_this_month,
-        COUNT(ao.id)                                                                                             AS total_opens,
-        MAX(ao.opened_at)                                                                                        AS last_app_open,
-        COUNT(dl.id) FILTER (WHERE dl.smoked = FALSE)  AS smoke_free_days_logged,
-        COUNT(dl.id) FILTER (WHERE dl.smoked = TRUE)   AS smoked_days_logged,
-        COUNT(dl.id)                                   AS total_days_logged,
-        COALESCE(SUM(dl.smoked_count) FILTER (WHERE dl.smoked = TRUE), 0) AS total_cigarettes_smoked
+        COUNT(ao.id) FILTER (WHERE DATE(ao.opened_at) = CURRENT_DATE)                                     AS opens_today,
+        COUNT(ao.id) FILTER (WHERE DATE_TRUNC('month', ao.opened_at) = DATE_TRUNC('month', CURRENT_DATE)) AS opens_this_month,
+        COUNT(ao.id)                                                                                       AS total_opens,
+        MAX(ao.opened_at)                                                                                  AS last_app_open,
+        COUNT(dl.id) FILTER (WHERE dl.smoked = FALSE)                                                     AS smoke_free_days_logged,
+        COUNT(dl.id) FILTER (WHERE dl.smoked = TRUE)                                                      AS smoked_days_logged,
+        COUNT(dl.id)                                                                                       AS total_days_logged,
+        COALESCE(SUM(dl.smoked_count) FILTER (WHERE dl.smoked = TRUE), 0)                                 AS total_cigarettes_smoked
       FROM users u
-      LEFT JOIN user_progress p  ON u.device_id = p.device_id
-      LEFT JOIN app_opens ao     ON u.device_id = ao.device_id
-      LEFT JOIN daily_logs dl    ON u.device_id = dl.device_id
+      LEFT JOIN user_progress p ON u.device_id = p.device_id
+      LEFT JOIN app_opens ao    ON u.device_id = ao.device_id
+      LEFT JOIN daily_logs dl   ON u.device_id = dl.device_id
       GROUP BY u.device_id, p.id
       ORDER BY p.days_smoke_free DESC NULLS LAST
     `);
 
-    console.log(`✅ Found ${result.rows.length} users`);
+    console.log(`✅ Admin: found ${result.rows.length} users`);
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching all users:", error);
