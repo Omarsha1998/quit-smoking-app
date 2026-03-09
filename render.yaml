@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: quit-smoking-app
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && ./node_modules/.bin/quasar build -m pwa
+    staticPublishPath: dist/pwa
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.0
+      - key: VITE_API_URL
+        value: https://quit-smoking-api-zr94.onrender.com/api
