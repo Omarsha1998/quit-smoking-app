@@ -302,6 +302,11 @@ export default {
   },
 
   methods: {
+    _isNativePlatform() {
+      // Capacitor is available in APK builds
+      return window.Capacitor?.isNativePlatform?.() === true
+    },
+
     _initComposables() {
       const quitDateRef         = ref(this.quitDate)
       const cigarettesPerDayRef = ref(this.cigarettesPerDay)
@@ -321,9 +326,16 @@ export default {
 
     async _initNotifications() {
       try {
-        const { display } = await LocalNotifications.checkPermissions()
-        if (display !== 'granted') { this.notificationsEnabled = false; this._saveToStorage() }
-      } catch (e) { console.log('Local notifications not available:', e) }
+        if (this._isNativePlatform()) {
+          // Native APK — use Capacitor
+          const { display } = await LocalNotifications.checkPermissions()
+          if (display !== 'granted') { this.notificationsEnabled = false; this._saveToStorage() }
+        } else {
+          // PWA — use Web Notifications API
+          if (!('Notification' in window)) { this.notificationsEnabled = false; return }
+          if (Notification.permission !== 'granted') { this.notificationsEnabled = false; this._saveToStorage() }
+        }
+      } catch (e) { console.log('Notifications not available:', e) }
     },
 
     _syncStatsToData() {
@@ -438,25 +450,97 @@ export default {
     async toggleNotifications(val) {
       try {
         if (val) {
-          const { display } = await LocalNotifications.requestPermissions()
-          if (display === 'granted') { this.notificationsEnabled = true; await this._scheduleDailyNotification(); this.$q.notify({ color: 'positive', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 }) }
-          else { this.notificationsEnabled = false; this.$q.notify({ color: 'warning', message: 'Please allow notifications in your phone settings.', icon: 'notifications_off', position: 'center', timeout: 3000 }) }
+          if (this._isNativePlatform()) {
+            // ── Native APK ──────────────────────────────
+            const { display } = await LocalNotifications.requestPermissions()
+            if (display === 'granted') {
+              this.notificationsEnabled = true
+              await this._scheduleDailyNotification()
+              this.$q.notify({ color: 'positive', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 })
+            } else {
+              this.notificationsEnabled = false
+              this.$q.notify({ color: 'warning', message: 'Please allow notifications in your phone settings.', icon: 'notifications_off', position: 'center', timeout: 3000 })
+            }
+          } else {
+            // ── PWA / Browser ───────────────────────────
+            if (!('Notification' in window)) {
+              this.$q.notify({ color: 'warning', message: 'Your browser does not support notifications.', position: 'center', timeout: 3000 })
+              return
+            }
+            const permission = await Notification.requestPermission()
+            if (permission === 'granted') {
+              this.notificationsEnabled = true
+              await this._scheduleDailyNotification()
+              this.$q.notify({ color: 'positive', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 })
+            } else {
+              this.notificationsEnabled = false
+              this.$q.notify({ color: 'warning', message: 'Please allow notifications in your browser settings.', icon: 'notifications_off', position: 'center', timeout: 3000 })
+            }
+          }
         } else {
+          // ── Disable ─────────────────────────────────
           this.notificationsEnabled = false
-          try { await LocalNotifications.cancel({ notifications: [{ id: 1 }] }) } catch (e) { console.log(e) }
+          if (this._isNativePlatform()) {
+            try { await LocalNotifications.cancel({ notifications: [{ id: 1 }] }) } catch (e) { console.log(e) }
+          }
           this.$q.notify({ color: 'info', message: 'Daily reminders disabled.', icon: 'notifications_off', position: 'center', timeout: 2000 })
         }
-      } catch (e) { console.error('Notification toggle error:', e); this.$q.notify({ color: 'negative', message: 'Could not update notifications.', position: 'center', timeout: 2000 }) }
+      } catch (e) {
+        console.error('Notification toggle error:', e)
+        this.$q.notify({ color: 'negative', message: 'Could not update notifications.', position: 'center', timeout: 2000 })
+      }
       this._saveToStorage()
     },
 
     async _scheduleDailyNotification() {
-      try { await LocalNotifications.cancel({ notifications: [{ id: 1 }] }) } catch (e) { console.log(e) }
-      const tips = [`You're doing amazing, ${this.userName}! Stay strong 💪`, `${this.stats.days} days smoke-free! You've saved ₱${this.stats.moneySaved?.toFixed(2) || 0}. Keep going!`, `Remember: You are stronger than your cravings. ${this.stats.cigarettesAvoided} cigarettes avoided!`, `Morning check-in! Log your day in PuffFree. You've got this! 🌟`]
+      const tips = [
+        `You're doing amazing, ${this.userName}! Stay strong 💪`,
+        `${this.stats.days} days smoke-free! You've saved ₱${this.stats.moneySaved?.toFixed(2) || 0}. Keep going!`,
+        `Remember: You are stronger than your cravings. ${this.stats.cigarettesAvoided} cigarettes avoided!`,
+        `Morning check-in! Log your day in PuffFree. You've got this! 🌟`,
+      ]
       const body = tips[Math.floor(Math.random() * tips.length)]
-      const now = new Date(); const scheduledAt = new Date(); scheduledAt.setHours(9, 0, 0, 0)
-      if (scheduledAt <= now) scheduledAt.setDate(scheduledAt.getDate() + 1)
-      await LocalNotifications.schedule({ notifications: [{ id: 1, title: 'PuffFree Daily Reminder 🌿', body, schedule: { at: scheduledAt, repeats: true, every: 'day' }, sound: null, smallIcon: 'ic_launcher', iconColor: '#7eab7e' }] })
+
+      if (this._isNativePlatform()) {
+        // ── Native APK — Capacitor Local Notifications ──
+        try { await LocalNotifications.cancel({ notifications: [{ id: 1 }] }) } catch (e) { console.log(e) }
+        const scheduledAt = new Date()
+        scheduledAt.setHours(9, 0, 0, 0)
+        if (scheduledAt <= new Date()) scheduledAt.setDate(scheduledAt.getDate() + 1)
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: 1,
+            title: 'PuffFree Daily Reminder 🌿',
+            body,
+            schedule: { at: scheduledAt, repeats: true, every: 'day' },
+            sound: null,
+            smallIcon: 'ic_launcher',
+            iconColor: '#7eab7e',
+          }]
+        })
+      } else {
+        // ── PWA — Web Notifications API + setTimeout trick ──
+        // Schedule for next 9AM
+        const now = new Date()
+        const next9AM = new Date()
+        next9AM.setHours(9, 0, 0, 0)
+        if (next9AM <= now) next9AM.setDate(next9AM.getDate() + 1)
+        const msUntil9AM = next9AM.getTime() - now.getTime()
+
+        // Clear existing timer if any
+        if (this._notifTimer) clearTimeout(this._notifTimer)
+
+        this._notifTimer = setTimeout(() => {
+          if (this.notificationsEnabled && Notification.permission === 'granted') {
+            new Notification('PuffFree Daily Reminder 🌿', {
+              body,
+              icon: '/icons/icon-192x192.png',
+            })
+            // Reschedule for next day
+            this._scheduleDailyNotification()
+          }
+        }, msUntil9AM)
+      }
     },
 
     _sendDailyNotification() {
