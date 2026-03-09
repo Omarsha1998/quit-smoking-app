@@ -10,7 +10,7 @@
       <div class="pf-tab-content q-pa-md">
 
         <template v-if="showAdmin">
-          <q-btn @click="showAdmin = false" label="← Back to More" icon="arrow_back" class="q-mb-md admin-toggle-btn" flat size="md" />
+          <q-btn @click="showAdmin = false" label="Back" icon="arrow_back" class="q-mb-md admin-toggle-btn" flat size="md" />
           <AdminDashboard :all-users="allUsers" :total-money-saved="totalMoneySaved" :total-cigarettes-avoided="totalCigarettesAvoided" :avg-days-smokee-free="avgDaysSmokeeFree" @view-user="openUserDetails" />
         </template>
 
@@ -21,13 +21,44 @@
           </div>
           <DailyCheckIn :today-date-label="todayDateLabel" :today-logged="todayLogged" :today-smoked="todaySmoked" :today-smoked-count="todaySmokedCount" :current-streak="currentStreak" :total-smoke-freedays="totalSmokeFreedays" :cigarettes-per-day="Number(cigarettesPerDay)" @log="onLogDay" />
           <StatsGrid :stats="stats" />
-          <VirtualPlant :smoke-days="stats.days" :relapse-today="todaySmoked" />
-          <MysteryRewardBox :smoke-days="stats.days" />
-          <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" />
           <CravingToolbar @crave="openCraving" @breathing="openBreathingDialog" @delay="openDelayDialog" @tap="openTapDialog" @community="openCommunityDialog" />
           <MotivationalCarousel :quotes="MOTIVATIONAL_QUOTES" />
-        </template>
+          <q-card v-if="stats.totalDaysSinceQuit > 0" class="q-mb-md" style="border-radius:16px; background:#f5ead8; border:1.5px solid #ddc8a8;">
+            <q-card-section>
+              <div class="text-subtitle2 text-weight-bold q-mb-sm" style="color:#5d9460;">
+                📊 Your Journey Breakdown
+              </div>
+              <div class="row q-col-gutter-sm text-center">
+                <div class="col-4">
+                  <div class="text-h6 text-weight-bold" style="color:#2e4a2e;">{{ stats.totalDaysSinceQuit }}</div>
+                  <div class="text-caption" style="color:#9aaa90;">Days Since Quit</div>
+                </div>
+                <div class="col-4">
+                  <div class="text-h6 text-weight-bold" style="color:#c97a8a;">{{ stats.smokedDaysCount }}</div>
+                  <div class="text-caption" style="color:#9aaa90;">Days Smoked</div>
+                </div>
+                <div class="col-4">
+                  <div class="text-h6 text-weight-bold" style="color:#5d9460;">{{ stats.days }}</div>
+                  <div class="text-caption" style="color:#9aaa90;">Smoke-Free Days</div>
+                </div>
+              </div>
+              <q-linear-progress
+                :value="stats.days / stats.totalDaysSinceQuit"
+                color="green-6"
+                track-color="red-2"
+                rounded
+                size="10px"
+                class="q-mt-md"
+              />
+              <div class="text-caption text-center q-mt-xs" style="color:#9aaa90;">
+                {{ stats.days }} smoke-free out of {{ stats.totalDaysSinceQuit }} days
+              </div>
+            </q-card-section>
+          </q-card>
 
+          <VirtualPlant :smoke-days="stats.days" :relapse-today="todaySmoked" />
+          <MysteryRewardBox :smoke-days="stats.days" />
+        </template>
         <template v-else-if="activeTab === 'tips'">
           <div class="tab-page-header q-mb-md">
             <q-icon name="school" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
@@ -51,7 +82,7 @@
             <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">My Progress</span>
           </div>
           <CigarettesGraph :total-days="stats.days" :cigarettes-per-day="Number(cigarettesPerDay)" :daily-logs="dailyLogs" />
-          <HealthTimeline :smoke-days="stats.days" :cigarettes-per-day="Number(cigarettesPerDay)" :price-per-pack="Number(pricePerPack)" />
+          <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" :stats="stats" :cigarettes-per-day="Number(cigarettesPerDay)" :price-per-pack="Number(pricePerPack)" />          <HealthTimeline :smoke-days="stats.days" :cigarettes-per-day="Number(cigarettesPerDay)" :price-per-pack="Number(pricePerPack)" />
           <DiseaseRiskCountdown :milestones="diseaseRiskMilestones" />
           <NotificationsToggle :enabled="notificationsEnabled" @toggle="toggleNotifications" />
         </template>

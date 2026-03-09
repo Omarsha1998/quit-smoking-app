@@ -33,6 +33,7 @@
     </q-card>
 
     <!-- 4-card stats grid -->
+    <!--
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col-6" v-for="(card, i) in statCards" :key="card.label">
         <q-card
@@ -48,6 +49,8 @@
         </q-card>
       </div>
     </div>
+    -->
+
   </div>
 </template>
 

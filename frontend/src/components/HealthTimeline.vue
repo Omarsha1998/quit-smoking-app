@@ -68,6 +68,7 @@
     </div>
 
     <!-- Future projection -->
+    <!--
     <div class="future-projection">
       <div class="projection-title">🔮 Your Future at 1 Year Smoke-Free</div>
       <div class="projection-grid">
@@ -88,7 +89,7 @@
         </div>
       </div>
     </div>
-
+    -->
   </div>
 </template>
 
