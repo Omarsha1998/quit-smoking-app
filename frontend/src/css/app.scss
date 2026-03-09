@@ -1,29 +1,86 @@
-// app global css in SCSS form
+// ═══════════════════════════════════════════════
+// PuffFree — App Global Styles
+// Theme: Honey Beige × Light Sage Green × Dusty Rose
+// ═══════════════════════════════════════════════
+
+// ── CSS Variables ────────────────────────────────
+:root {
+  // Sage Green — lightened
+  --pf-green-dark:    #5d9460;
+  --pf-green-mid:     #7eab7e;
+  --pf-green-light:   #a8d0a8;
+  --pf-green-pale:    #d6efd6;
+  --pf-green-mist:    #e8f5e8;
+
+  // Honey Beige — card surfaces now lighter than page bg for contrast
+  --pf-beige-deep:    #c8a870;
+  --pf-beige-mid:     #ddc8a8;
+  --pf-beige-light:   #ede0c4;
+  --pf-beige-pale:    #faf2e4;
+  --pf-beige-white:   #fffdf8;
+
+  // Dusty Rose — new accent
+  --pf-rose-dark:     #a85c6e;
+  --pf-rose-mid:      #c97a8a;
+  --pf-rose-light:    #e8aab8;
+  --pf-rose-pale:     #fce8ee;
+  --pf-rose-mist:     #fff0f4;
+
+  // Borders
+  --pf-border:        #b8d4b0;
+  --pf-border-beige:  #d4c4a0;
+
+  // Text
+  --pf-text-dark:     #2e4a2e;
+  --pf-text-mid:      #5d9460;
+  --pf-text-muted:    #9aaa90;
+  --pf-text-warm:     #7a6040;
+
+  // Shadows
+  --pf-shadow-green:  rgba(93, 148, 96, 0.15);
+  --pf-shadow-warm:   rgba(180, 140, 90, 0.12);
+  --pf-shadow-rose:   rgba(201, 122, 138, 0.12);
+
+  // Radii
+  --pf-radius-sm:     8px;
+  --pf-radius-md:     14px;
+  --pf-radius-lg:     20px;
+  --pf-radius-xl:     28px;
+}
+
+// ── Page Background ──────────────────────────────
+// Deeper, richer background so cards visually elevate off the surface
 .bg-gradient {
-  background: #f5f5f5;
+  background:
+    radial-gradient(ellipse at 15% 10%,  rgba(93, 148, 96, 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 90%,  rgba(201, 122, 138, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(200, 168, 112, 0.08) 0%, transparent 70%),
+    #e8d8be;
   min-height: 100vh;
 }
 
-.bg-gradient-blue {
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+.bg-gradient-green {
+  background: linear-gradient(135deg, var(--pf-green-mid) 0%, var(--pf-green-dark) 100%);
 }
 
+// ── Shadows ──────────────────────────────────────
 .shadow-xl {
   box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    0 20px 25px -5px var(--pf-shadow-green),
+    0 10px 10px -5px var(--pf-shadow-warm);
 }
 
 .shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(93, 148, 96, 0.22);
 }
 
 .shadow-lg {
   box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    0 10px 15px -3px var(--pf-shadow-green),
+    0 4px 6px -2px var(--pf-shadow-warm);
 }
 
+// ── Hover Lift ───────────────────────────────────
 .hover-lift {
   transition:
     transform 0.3s ease,
@@ -32,151 +89,119 @@
 
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(93, 148, 96, 0.25);
 }
 
-.opacity-80 {
-  opacity: 0.8;
-}
+// ── Opacity Utilities ────────────────────────────
+.opacity-80 { opacity: 0.8; }
+.opacity-50 { opacity: 0.5; }
 
-.opacity-50 {
-  opacity: 0.5;
-}
-
+// ── Carousel Dot ─────────────────────────────────
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(168, 210, 168, 0.45);
   transition: all 0.3s ease;
 }
 
 .dot.active {
   width: 24px;
   border-radius: 4px;
-  background: white;
+  background: var(--pf-green-mid);
 }
 
+// ── Keyframes ────────────────────────────────────
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
 @keyframes bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-10px); }
 }
 
 @keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.7; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
+@keyframes gentleGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(126, 171, 126, 0.2); }
+  50%       { box-shadow: 0 0 24px rgba(126, 171, 126, 0.45); }
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s ease-out forwards;
-  opacity: 0;
+// Dusty rose glow — for special moments (streaks, achievements)
+@keyframes roseGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(201, 122, 138, 0.2); }
+  50%       { box-shadow: 0 0 28px rgba(201, 122, 138, 0.50); }
 }
 
-.animate-bounce {
-  animation: bounce 2s ease-in-out infinite;
-}
+// ── Animation Classes ────────────────────────────
+.animate-fade-in  { animation: fadeIn   0.5s ease-out;           }
+.animate-slide-up { animation: slideUp  0.5s ease-out forwards; opacity: 0; }
+.animate-bounce   { animation: bounce   2s ease-in-out infinite; }
+.animate-pulse    { animation: pulse    2s ease-in-out infinite; }
+.animate-glow     { animation: gentleGlow 3s ease-in-out infinite; }
+.animate-rose-glow{ animation: roseGlow   3s ease-in-out infinite; }
 
-.animate-pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
 
-.delay-1 {
-  animation-delay: 0.1s;
-}
-.delay-2 {
-  animation-delay: 0.2s;
-}
-.delay-3 {
-  animation-delay: 0.3s;
-}
-.delay-4 {
-  animation-delay: 0.4s;
-}
-
+// ── Vue Transitions ──────────────────────────────
 .fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
+.fade-leave-active { transition: opacity 0.5s; }
 
 .fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-leave-to    { opacity: 0; }
 
-/* Professional card styling */
+// ── Registration Card ────────────────────────────
 .registration-card {
-  border-radius: 16px;
+  border-radius: var(--pf-radius-lg);
   overflow: hidden;
-  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+  background: linear-gradient(to bottom, var(--pf-beige-white) 0%, var(--pf-beige-pale) 100%);
+  border: 1.5px solid var(--pf-border);
 }
 
-/* Logo styling with subtle effects */
+// ── Logo ─────────────────────────────────────────
 .logo-image {
   width: 100%;
   height: auto;
   max-width: 110px;
   max-height: 110px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+  filter: drop-shadow(0 4px 12px rgba(93, 148, 96, 0.12));
   transition: transform 0.3s ease;
 }
 
-.logo-image:hover {
-  transform: scale(1.05);
-}
+.logo-image:hover { transform: scale(1.05); }
 
-/* Elegant divider between logos */
 .logo-divider {
   width: 2px;
   height: 60px;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    #e0e0e0 20%,
-    #e0e0e0 80%,
+    var(--pf-border) 20%,
+    var(--pf-border) 80%,
     transparent 100%
   );
 }
 
-/* Typography refinements */
+// ── Typography ───────────────────────────────────
 .welcome-text {
   font-family: 'Roboto', sans-serif;
   letter-spacing: -0.5px;
   line-height: 1.2;
+  color: var(--pf-text-dark);
 }
 
 .tagline-text {
@@ -184,75 +209,105 @@
   line-height: 1.6;
   max-width: 320px;
   margin: 0 auto;
+  color: var(--pf-text-warm);
 }
 
-/* Modern input styling */
+// ── Inputs ───────────────────────────────────────
 .input-modern {
   font-size: 16px;
 }
 
 .input-modern :deep(.q-field__control) {
-  border-radius: 12px;
+  border-radius: var(--pf-radius-md);
+  background: var(--pf-beige-white);
 }
 
-/* Modern button with better interaction */
+.input-modern :deep(.q-field--outlined .q-field__control:before) {
+  border-color: var(--pf-border);
+}
+
+.input-modern :deep(.q-field--outlined.q-field--focused .q-field__control:after) {
+  border-color: var(--pf-green-mid);
+}
+
+.input-modern :deep(.q-field__label) {
+  color: var(--pf-text-muted);
+}
+
+// ── Primary Button ───────────────────────────────
 .modern-button {
-  border-radius: 12px;
+  border-radius: var(--pf-radius-md);
   padding: 14px 0;
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.3px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.25);
+  background: linear-gradient(135deg, var(--pf-green-mid) 0%, var(--pf-green-dark) 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 14px rgba(93, 148, 96, 0.3);
 }
 
 .modern-button:hover:not([disabled]) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.35);
+  box-shadow: 0 8px 22px rgba(93, 148, 96, 0.4);
 }
 
 .modern-button:active:not([disabled]) {
   transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(93, 148, 96, 0.25);
 }
 
-/* Responsive logo sizing - more refined */
+// ── Quasar Card overrides ────────────────────────
+// Cards are light/bright so they pop off the deeper #e8d8be page bg
+.q-card {
+  border-radius: var(--pf-radius-lg) !important;
+  border: 1.5px solid var(--pf-border) !important;
+  background: var(--pf-beige-pale) !important;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.08),
+    0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+// ── Encouragement Wall (Community Dialog) ────────
+.encouragement-wall {
+  max-height: 180px;
+  overflow-y: auto;
+  border-radius: var(--pf-radius-sm);
+  border: 1px solid var(--pf-border);
+  padding: 6px;
+  background: var(--pf-beige-white);
+
+  &::-webkit-scrollbar       { width: 5px; }
+  &::-webkit-scrollbar-track { background: var(--pf-beige-light); border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: var(--pf-green-light); border-radius: 4px; }
+}
+
+.encouragement-msg {
+  border-radius: var(--pf-radius-sm);
+  border-left: 3px solid var(--pf-green-light);
+  background: var(--pf-green-mist) !important;
+
+  // Dusty rose alternating — warmth in the community wall
+  &:nth-child(even) {
+    background: var(--pf-rose-mist) !important;
+    border-left-color: var(--pf-rose-light);
+  }
+}
+
+// ── Responsive Logos ─────────────────────────────
 @media (max-width: 599px) {
-  .logo-image {
-    max-width: 75px;
-    max-height: 75px;
-  }
-
-  .logo-divider {
-    height: 45px;
-  }
-
-  .welcome-text {
-    font-size: 2rem;
-  }
-
-  .tagline-text {
-    font-size: 0.9rem;
-  }
+  .logo-image     { max-width: 75px;  max-height: 75px;  }
+  .logo-divider   { height: 45px; }
+  .welcome-text   { font-size: 2rem; }
+  .tagline-text   { font-size: 0.9rem; }
 }
 
 @media (min-width: 600px) and (max-width: 1023px) {
-  .logo-image {
-    max-width: 95px;
-    max-height: 95px;
-  }
-
-  .logo-divider {
-    height: 55px;
-  }
+  .logo-image     { max-width: 95px;  max-height: 95px;  }
+  .logo-divider   { height: 55px; }
 }
 
 @media (min-width: 1024px) {
-  .logo-image {
-    max-width: 120px;
-    max-height: 120px;
-  }
-
-  .logo-divider {
-    height: 70px;
-  }
+  .logo-image     { max-width: 120px; max-height: 120px; }
+  .logo-divider   { height: 70px; }
 }

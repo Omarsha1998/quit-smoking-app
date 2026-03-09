@@ -1,24 +1,33 @@
 <template>
-  <q-card class="q-mb-md shadow-lg">
-    <q-card-section class="bg-red-6 text-white">
+  <q-card class="q-mb-md shadow-lg" style="border-radius: 18px; overflow: hidden; border: 1.5px solid #e8aab8;">
+
+    <!-- Header — Dusty Rose (health awareness) -->
+    <q-card-section style="background: linear-gradient(135deg, #c97a8a 0%, #a85c6e 100%);" class="text-white">
       <div class="text-h6 text-weight-bold">
         <q-icon name="timer" class="q-mr-sm" />Disease Risk Countdown
       </div>
     </q-card-section>
-    <q-card-section>
+
+    <q-card-section style="background: #f5ead8;">
       <q-list>
         <q-item v-for="(risk, idx) in milestones" :key="idx" class="q-pa-sm">
           <q-item-section>
-            <q-item-label class="text-weight-bold text-blue-9">{{ risk.label }}</q-item-label>
-            <q-item-label caption class="text-grey-7 q-mb-xs">{{ risk.benefit }}</q-item-label>
+            <q-item-label class="text-weight-bold" style="color: #2e4a2e;">{{ risk.label }}</q-item-label>
+            <q-item-label caption class="q-mb-xs" style="color: #7a6040;">{{ risk.benefit }}</q-item-label>
             <q-linear-progress
               :value="risk.progress"
-              :color="risk.progress >= 1 ? 'green' : 'blue-6'"
-              track-color="blue-1"
               rounded
               size="10px"
+              :style="risk.progress >= 1
+                ? 'background: #d6efd6;'
+                : 'background: #fce8ee;'"
+              :color="risk.progress >= 1 ? 'green-6' : 'pink-4'"
             />
-            <q-item-label caption class="q-mt-xs" :class="risk.progress >= 1 ? 'text-green-7' : 'text-blue-7'">
+            <q-item-label
+              caption
+              class="q-mt-xs"
+              :style="risk.progress >= 1 ? 'color: #5d9460;' : 'color: #c97a8a;'"
+            >
               {{ risk.progress >= 1
                 ? '✅ Milestone reached!'
                 : `${risk.daysLeft} days to go — You are ${risk.daysDone} days closer!` }}

@@ -1,101 +1,275 @@
 <template>
-  <q-page class="q-pa-md bg-gradient">
+  <!-- Outer wrapper: fills screen, positions bottom nav fixed -->
+  <q-page class="bg-gradient pf-page-wrap">
 
-    <!-- Admin toggle -->
-    <q-btn
-      v-if="deviceId && isAdmin && hasStarted"
-      @click="toggleAdminView"
-      :label="showAdmin ? 'My Progress' : 'Admin Dashboard'"
-      :icon="showAdmin ? 'person' : 'admin_panel_settings'"
-      class="q-mb-md bg-blue-2"
-      color="blue-10"
-      flat
-      size="md"
-    />
+    <!-- ══════════════ PRE-DASHBOARD FLOWS ══════════════ -->
+    <div v-if="!deviceId || !hasStarted" class="q-pa-md">
+      <RegistrationCard v-if="!deviceId" @register="handleRegister" />
+      <SetupForm v-else-if="!hasStarted" :user-name="userName" @start="handleStart" />
+    </div>
 
-    <!-- ══════════════ ADMIN VIEW ══════════════ -->
-    <AdminDashboard
-      v-if="showAdmin"
-      :all-users="allUsers"
-      :total-money-saved="totalMoneySaved"
-      :total-cigarettes-avoided="totalCigarettesAvoided"
-      :avg-days-smokee-free="avgDaysSmokeeFree"
-      @view-user="openUserDetails"
-    />
-
-    <!-- ══════════════ USER FLOW ══════════════ -->
+    <!-- ══════════════ MAIN APP (after setup) ══════════════ -->
     <template v-else>
 
-      <!-- Step 1: Register -->
-      <RegistrationCard v-if="!deviceId" @register="handleRegister" />
+      <!-- Scrollable content area — padded bottom so content clears the nav bar -->
+      <div class="pf-tab-content q-pa-md">
 
-      <!-- Step 2: Setup -->
-      <SetupForm v-else-if="!hasStarted" :user-name="userName" @start="handleStart" />
+        <!-- ── ADMIN VIEW (overrides tabs) ── -->
+        <template v-if="showAdmin">
+          <q-btn
+            @click="toggleAdminView"
+            label="← My Progress"
+            icon="person"
+            class="q-mb-md admin-toggle-btn"
+            flat size="md"
+          />
+          <AdminDashboard
+            :all-users="allUsers"
+            :total-money-saved="totalMoneySaved"
+            :total-cigarettes-avoided="totalCigarettesAvoided"
+            :avg-days-smokee-free="avgDaysSmokeeFree"
+            @view-user="openUserDetails"
+          />
+        </template>
 
-      <!-- Step 3: Dashboard -->
-      <div v-else>
-        <div class="text-center q-mb-lg animate-fade-in">
-          <div class="text-h4 text-weight-bold text-blue-9">{{ userName }}'s Progress</div>
-          <div class="text-subtitle1 text-blue-6">Keep going, you're doing great!</div>
-        </div>
+        <!-- ════════ TAB: HOME ════════ -->
+        <template v-else-if="activeTab === 'home'">
 
-        <DailyCheckIn
-          :today-date-label="todayDateLabel"
-          :today-logged="todayLogged"
-          :today-smoked="todaySmoked"
-          :current-streak="currentStreak"
-          :total-smoke-freedays="totalSmokeFreedays"
-          @log="onLogDay"
-        />
+          <!-- Dashboard header -->
+          <div class="text-center q-mb-lg animate-fade-in dashboard-header q-pa-md">
+            <div class="text-h4 text-weight-bold" style="color: var(--pf-text-dark);">
+              {{ userName }}'s Progress
+            </div>
+            <div class="text-subtitle1" style="color: var(--pf-text-mid);">
+              Keep going, you're doing great! 🌿
+            </div>
+          </div>
 
-        <StatsGrid :stats="stats" />
+          <DailyCheckIn
+            :today-date-label="todayDateLabel"
+            :today-logged="todayLogged"
+            :today-smoked="todaySmoked"
+            :today-smoked-count="todaySmokedCount"
+            :current-streak="currentStreak"
+            :total-smoke-freedays="totalSmokeFreedays"
+            :cigarettes-per-day="Number(cigarettesPerDay)"
+            @log="onLogDay"
+          />
 
-        <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" />
+          <StatsGrid :stats="stats" />
 
-        <CigarettesGraph :total-days="stats.days" :cigarettes-per-day="Number(cigarettesPerDay)" />
+          <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" />
 
-        <DiseaseRiskCountdown :milestones="diseaseRiskMilestones" />
+          <CravingToolbar
+            @crave="openCraving"
+            @breathing="openBreathingDialog"
+            @delay="openDelayDialog"
+            @tap="openTapDialog"
+            @community="openCommunityDialog"
+          />
 
-        <CravingToolbar
-          @crave="openCraving"
-          @breathing="openBreathingDialog"
-          @delay="openDelayDialog"
-          @tap="openTapDialog"
-          @community="openCommunityDialog"
-        />
+          <MotivationalCarousel :quotes="MOTIVATIONAL_QUOTES" />
 
-        <MotivationalCarousel :quotes="MOTIVATIONAL_QUOTES" />
+        </template>
 
-        <NotificationsToggle :enabled="notificationsEnabled" @toggle="toggleNotifications" />
+        <!-- ════════ TAB: TIPS ════════ -->
+        <template v-else-if="activeTab === 'tips'">
 
-        <InfoList
-          title="Health Milestones"
-          icon="trending_up"
-          header-color="bg-blue-6"
-          badge-color="blue-6"
-          text-color="text-blue-8"
-          :items="HEALTH_MILESTONES"
+          <div class="tab-page-header q-mb-md">
+            <q-icon name="school" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">Tips & Education</span>
+          </div>
+
+          <!-- Health Milestones -->
+          <InfoList
+            title="Health Milestones"
+            icon="trending_up"
+            header-color="pf-header-green"
+            badge-color="pf-badge-green"
+            text-color="pf-text-green"
+            :items="HEALTH_MILESTONES"
+          >
+            <template #avatar="{ }">
+              <q-avatar style="background: var(--pf-green-pale); color: var(--pf-green-mid);" icon="check_circle" />
+            </template>
+            <template #item="{ item }">
+              <q-item-label class="text-weight-bold" style="color: var(--pf-text-dark);">{{ item.time }}</q-item-label>
+              <q-item-label caption style="color: var(--pf-text-mid);">{{ item.benefit }}</q-item-label>
+            </template>
+          </InfoList>
+
+          <!-- Educational Tips -->
+          <InfoList
+            title="Educational Tips"
+            icon="school"
+            header-color="pf-header-beige"
+            badge-color="pf-badge-beige"
+            text-color="pf-text-beige"
+            :items="EDUCATIONAL_TIPS"
+          />
+
+          <!-- Health Benefits -->
+          <InfoList
+            title="Health Benefits of Quitting"
+            icon="favorite"
+            header-color="pf-header-green"
+            badge-color="pf-badge-green"
+            text-color="pf-text-green"
+            :items="HEALTH_BENEFITS"
+          />
+
+          <!-- Risk Factors -->
+          <InfoList
+            title="Risk Factors of Smoking"
+            icon="warning"
+            header-color="pf-header-rose"
+            badge-color="pf-badge-rose"
+            text-color="pf-text-rose"
+            :items="RISK_FACTORS"
+          />
+
+        </template>
+
+        <!-- ════════ TAB: TRACK ════════ -->
+        <template v-else-if="activeTab === 'track'">
+
+          <div class="tab-page-header q-mb-md">
+            <q-icon name="show_chart" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">My Progress</span>
+          </div>
+
+          <CigarettesGraph
+            :total-days="stats.days"
+            :cigarettes-per-day="Number(cigarettesPerDay)"
+            :daily-logs="dailyLogs"
+          />
+
+          <DiseaseRiskCountdown :milestones="diseaseRiskMilestones" />
+
+          <NotificationsToggle :enabled="notificationsEnabled" @toggle="toggleNotifications" />
+
+        </template>
+
+        <!-- ════════ TAB: MORE ════════ -->
+        <template v-else-if="activeTab === 'more'">
+
+          <div class="tab-page-header q-mb-md">
+            <q-icon name="more_horiz" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">More</span>
+          </div>
+
+          <!-- User info card -->
+          <q-card class="q-mb-md" style="border-radius: 16px;">
+            <q-card-section style="background: #faf2e4;">
+              <div class="row items-center q-gutter-md">
+                <q-avatar
+                  size="56px"
+                  style="background: linear-gradient(135deg, #7eab7e, #5d9460); color: white; font-size: 1.5rem; font-weight: 700;"
+                >
+                  {{ userName.charAt(0).toUpperCase() }}
+                </q-avatar>
+                <div>
+                  <div class="text-h6 text-weight-bold" style="color: #2e4a2e;">{{ userName }}</div>
+                  <div class="text-caption" style="color: #9aaa90;">{{ stats.days }} days smoke-free</div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <!-- Admin panel (if admin user) -->
+          <q-card v-if="isAdmin" class="q-mb-md" style="border-radius: 16px; border-color: #b8d4b0 !important;">
+            <q-item
+              clickable
+              @click="toggleAdminView"
+              style="background: #faf2e4; border-radius: 16px;"
+            >
+              <q-item-section avatar>
+                <q-avatar style="background: #d6efd6; color: #5d9460;" icon="admin_panel_settings" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Admin Dashboard</q-item-label>
+                <q-item-label caption style="color: #9aaa90;">View all users & stats</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-icon name="chevron_right" style="color: #b8d4b0;" />
+              </q-item-section>
+            </q-item>
+          </q-card>
+
+          <!-- More options list -->
+          <q-card class="q-mb-md" style="border-radius: 16px;">
+            <q-list style="background: #faf2e4; border-radius: 16px;">
+
+              <q-item clickable @click="openCommunityDialog" style="border-radius: 12px 12px 0 0;">
+                <q-item-section avatar>
+                  <q-avatar style="background: #d6efd6; color: #5d9460;" icon="groups" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Community Challenge</q-item-label>
+                  <q-item-label caption style="color: #9aaa90;">Join & encourage others</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-icon name="chevron_right" style="color: #b8d4b0;" />
+                </q-item-section>
+              </q-item>
+
+              <q-separator style="background: #ede0c4;" />
+
+              <q-item clickable @click="toggleNotifications(!notificationsEnabled)" style="border-radius: 0 0 12px 12px;">
+                <q-item-section avatar>
+                  <q-avatar style="background: #fce8ee; color: #c97a8a;" icon="notifications" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Notifications</q-item-label>
+                  <q-item-label caption style="color: #9aaa90;">{{ notificationsEnabled ? 'Daily reminders ON' : 'Daily reminders OFF' }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-toggle
+                    :model-value="notificationsEnabled"
+                    color="green-6"
+                    @update:model-value="toggleNotifications"
+                    @click.stop
+                  />
+                </q-item-section>
+              </q-item>
+
+            </q-list>
+          </q-card>
+
+          <!-- Reset -->
+          <q-btn
+            @click="handleReset"
+            label="Reset Progress"
+            size="md"
+            class="full-width reset-btn q-mt-sm"
+            flat
+          />
+
+        </template>
+
+      </div><!-- /pf-tab-content -->
+
+      <!-- ══════════════ BOTTOM NAV BAR ══════════════ -->
+      <div class="pf-bottom-nav" v-if="!showAdmin">
+        <button
+          v-for="tab in navTabs"
+          :key="tab.name"
+          class="pf-nav-item"
+          :class="{ 'pf-nav-active': activeTab === tab.name }"
+          @click="activeTab = tab.name"
         >
-          <template #avatar="{ }">
-            <q-avatar color="blue-1" text-color="blue-6" icon="check_circle" />
-          </template>
-          <template #item="{ item }">
-            <q-item-label class="text-weight-bold text-blue-9">{{ item.time }}</q-item-label>
-            <q-item-label caption class="text-blue-7">{{ item.benefit }}</q-item-label>
-          </template>
-        </InfoList>
-
-        <InfoList title="Educational Tips"           icon="school"   header-color="bg-blue-6"  badge-color="blue-6"  text-color="text-blue-8"  :items="EDUCATIONAL_TIPS"  />
-        <InfoList title="Risk Factors of Smoking"    icon="warning"  header-color="bg-red-6"   badge-color="red-6"   text-color="text-red-8"   :items="RISK_FACTORS"      />
-        <InfoList title="Health Benefits of Quitting" icon="favorite" header-color="bg-green-6" badge-color="green-6" text-color="text-green-8" :items="HEALTH_BENEFITS"   />
-
-        <q-btn @click="handleReset" color="grey-5" text-color="grey-8" label="Reset Progress" size="md" class="full-width" />
+          <div class="pf-nav-icon-wrap">
+            <q-icon :name="tab.icon" size="24px" />
+          </div>
+          <span class="pf-nav-label">{{ tab.label }}</span>
+        </button>
       </div>
-    </template>
+
+    </template><!-- /main app -->
 
     <!-- ══════════════ DIALOGS ══════════════ -->
 
-    <CravingDialog        v-model="showCravingDialog"    :tip="activeCravingTip" />
+    <CravingDialog v-model="showCravingDialog" :tip="activeCravingTip" />
 
     <BreathingDialog
       v-model="showBreathingDialog"
@@ -186,25 +360,25 @@ import { useTapGame }    from '../composables/useTapGame'
 import { useCommunity }  from '../composables/useCommunity'
 
 // Components
-import RegistrationCard    from '../components/RegistrationCard.vue'
-import SetupForm           from '../components/SetupForm.vue'
-import DailyCheckIn        from '../components/DailyCheckIn.vue'
-import StatsGrid           from '../components/StatsGrid.vue'
-import SavingsBreakdown    from '../components/SavingsBreakdown.vue'
-import CigarettesGraph     from '../components/CigarettesGraph.vue'
+import RegistrationCard     from '../components/RegistrationCard.vue'
+import SetupForm            from '../components/SetupForm.vue'
+import DailyCheckIn         from '../components/DailyCheckIn.vue'
+import StatsGrid            from '../components/StatsGrid.vue'
+import SavingsBreakdown     from '../components/SavingsBreakdown.vue'
+import CigarettesGraph      from '../components/CigarettesGraph.vue'
 import DiseaseRiskCountdown from '../components/DiseaseRiskCountdown.vue'
-import CravingToolbar      from '../components/CravingToolbar.vue'
+import CravingToolbar       from '../components/CravingToolbar.vue'
 import MotivationalCarousel from '../components/MotivationalCarousel.vue'
-import NotificationsToggle from '../components/NotificationsToggle.vue'
-import InfoList            from '../components/InfoList.vue'
-import AdminDashboard      from '../components/AdminDashboard.vue'
-import CravingDialog       from '../components/CravingDialog.vue'
-import BreathingDialog     from '../components/BreathingDialog.vue'
-import DelayTimerDialog    from '../components/DelayTimerDialog.vue'
-import TapGameDialog       from '../components/TapGameDialog.vue'
-import CommunityDialog     from '../components/CommunityDialog.vue'
-import AdminPinDialog      from '../components/AdminPinDialog.vue'
-import UserDetailsDialog   from '../components/UserDetailsDialog.vue'
+import NotificationsToggle  from '../components/NotificationsToggle.vue'
+import InfoList             from '../components/InfoList.vue'
+import AdminDashboard       from '../components/AdminDashboard.vue'
+import CravingDialog        from '../components/CravingDialog.vue'
+import BreathingDialog      from '../components/BreathingDialog.vue'
+import DelayTimerDialog     from '../components/DelayTimerDialog.vue'
+import TapGameDialog        from '../components/TapGameDialog.vue'
+import CommunityDialog      from '../components/CommunityDialog.vue'
+import AdminPinDialog       from '../components/AdminPinDialog.vue'
+import UserDetailsDialog    from '../components/UserDetailsDialog.vue'
 
 import { userAPI } from '../services/api'
 
@@ -232,19 +406,20 @@ export default {
       cigarettesPerDay: '',
       pricePerPack:     '',
 
-      // ── Stats (managed via composable, mirrored here) ──
+      // ── Stats ──
       stats: { days: 0, hours: 0, minutes: 0, cigarettesAvoided: 0, moneySaved: 0, lifeRegained: 0, healthBoost: 0 },
-      dailySavings:   0,
-      weeklySavings:  0,
-      monthlySavings: 0,
+      dailySavings:          0,
+      weeklySavings:         0,
+      monthlySavings:        0,
       diseaseRiskMilestones: [],
 
-      // ── Daily log (from composable) ──
-      dailyLogs:        [],
-      todayLogged:      false,
-      todaySmoked:      false,
-      todayDateLabel:   '',
-      currentStreak:    0,
+      // ── Daily log ──
+      dailyLogs:          [],
+      todayLogged:        false,
+      todaySmoked:        false,
+      todaySmokedCount:   0,
+      todayDateLabel:     '',
+      currentStreak:      0,
       totalSmokeFreedays: 0,
 
       // ── Notifications ──
@@ -255,38 +430,38 @@ export default {
       showCravingDialog: false,
       activeCravingTip:  '',
 
-      // ── Breathing (from composable) ──
+      // ── Breathing ──
       showBreathingDialog: false,
-      breathingStarted:  false,
-      breathingDone:     false,
-      breathPhase:       'inhale',
-      breathCountdown:   4,
-      breathCyclesDone:  0,
-      breathTotalCycles: 6,
-      breathLabel:       'Inhale',
-      breathPhaseFull:   '',
-      breathCircleStyle: {},
-      breathProgress:    0,
+      breathingStarted:    false,
+      breathingDone:       false,
+      breathPhase:         'inhale',
+      breathCountdown:     4,
+      breathCyclesDone:    0,
+      breathTotalCycles:   6,
+      breathLabel:         'Inhale',
+      breathPhaseFull:     '',
+      breathCircleStyle:   {},
+      breathProgress:      0,
 
-      // ── Delay timer (from composable) ──
-      showDelayDialog:  false,
-      delayStarted:     false,
-      delayDone:        false,
-      delayMinutes:     5,
-      delaySeconds:     0,
-      delayProgress:    0,
-      delayMessage:     '',
+      // ── Delay timer ──
+      showDelayDialog: false,
+      delayStarted:    false,
+      delayDone:       false,
+      delayMinutes:    5,
+      delaySeconds:    0,
+      delayProgress:   0,
+      delayMessage:    '',
 
-      // ── Tap game (from composable) ──
+      // ── Tap game ──
       showTapGameDialog: false,
-      tapGameStarted:   false,
-      tapGameDone:      false,
-      tapCount:         0,
-      tapTimeLeft:      60,
-      tapProgress:      0,
-      tapResultMessage: '',
+      tapGameStarted:    false,
+      tapGameDone:       false,
+      tapCount:          0,
+      tapTimeLeft:       60,
+      tapProgress:       0,
+      tapResultMessage:  '',
 
-      // ── Community (from composable) ──
+      // ── Community ──
       showCommunityDialog:   false,
       joinedChallenge:       false,
       communityParticipants: 247,
@@ -295,28 +470,37 @@ export default {
       leaderboard:           [],
 
       // ── Admin ──
-      showAdmin:           false,
-      allUsers:            [],
-      showUserDialog:      false,
-      selectedUser:        null,
-      showPinDialog:       false,
-      adminPin:            '',
-      isAdminAuthenticated:false,
+      showAdmin:            false,
+      allUsers:             [],
+      showUserDialog:       false,
+      selectedUser:         null,
+      showPinDialog:        false,
+      adminPin:             '',
+      isAdminAuthenticated: false,
 
       // ── Sync ──
-      isOnline:   navigator.onLine,
-      syncQueue:  [],
+      isOnline:  navigator.onLine,
+      syncQueue: [],
 
       // ── Intervals ──
       updateInterval:         null,
       backgroundSyncInterval: null,
 
-      // ── Expose constants to template ──
+      // ── Constants exposed to template ──
       MOTIVATIONAL_QUOTES,
       HEALTH_MILESTONES,
       EDUCATIONAL_TIPS,
       RISK_FACTORS,
       HEALTH_BENEFITS,
+
+      // ── Bottom nav ──
+      activeTab: 'home',
+      navTabs: [
+        { name: 'home',  label: 'Home',  icon: 'home'       },
+        { name: 'tips',  label: 'Tips',  icon: 'school'     },
+        { name: 'track', label: 'Track', icon: 'show_chart' },
+        { name: 'more',  label: 'More',  icon: 'more_horiz' },
+      ],
     }
   },
 
@@ -331,9 +515,7 @@ export default {
   },
 
   mounted() {
-    // ── Wire composables ──
     this._initComposables()
-
     window.addEventListener('online',  this._onOnline)
     window.addEventListener('offline', this._onOffline)
     this._loadFromStorage()
@@ -346,8 +528,8 @@ export default {
   beforeUnmount() {
     window.removeEventListener('online',  this._onOnline)
     window.removeEventListener('offline', this._onOffline)
-    if (this.updateInterval)          clearInterval(this.updateInterval)
-    if (this.notificationInterval)    clearInterval(this.notificationInterval)
+    if (this.updateInterval)       clearInterval(this.updateInterval)
+    if (this.notificationInterval) clearInterval(this.notificationInterval)
     this._breathing.stopBreathing()
     this._delay.stopDelayTimer()
     this._tap.stopTapGame()
@@ -359,52 +541,53 @@ export default {
     // COMPOSABLE WIRING
     // ════════════════════════════════════════════
     _initComposables() {
-
-      const quitDateRef        = ref(this.quitDate)
+      const quitDateRef         = ref(this.quitDate)
       const cigarettesPerDayRef = ref(this.cigarettesPerDay)
-      const pricePerPackRef    = ref(this.pricePerPack)
+      const pricePerPackRef     = ref(this.pricePerPack)
 
-      // ── Stats ──
-      this._statsComp = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef)
-      this._quitDateRef        = quitDateRef
-      this._cigarettesPerDayRef = cigarettesPerDayRef
-      this._pricePerPackRef    = pricePerPackRef
-
-      // ── Daily log ──
       const log = useDailyLog()
+      log.dailyLogs.value = this.dailyLogs
       this._log = log
 
-      // ── Sync ──
-      this._sync = useSync()
+      this._statsComp           = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
+      this._quitDateRef         = quitDateRef
+      this._cigarettesPerDayRef = cigarettesPerDayRef
+      this._pricePerPackRef     = pricePerPackRef
 
-      // ── Mini-games ──
+      this._sync      = useSync()
       this._breathing = useBreathing()
       this._delay     = useDelayTimer()
       this._tap       = useTapGame()
-
-      // ── Community ──
       this._community = useCommunity()
+
       this.encouragementMessages = this._community.encouragementMessages.value
       this.leaderboard           = this._community.leaderboard.value
     },
 
     _syncStatsToData() {
       const s = this._statsComp
-      this.stats              = { ...s.stats.value }
-      this.dailySavings       = s.dailySavings.value
-      this.weeklySavings      = s.weeklySavings.value
-      this.monthlySavings     = s.monthlySavings.value
+      this.stats                 = { ...s.stats.value }
+      this.dailySavings          = s.dailySavings.value
+      this.weeklySavings         = s.weeklySavings.value
+      this.monthlySavings        = s.monthlySavings.value
       this.diseaseRiskMilestones = s.diseaseRiskMilestones.value
     },
 
     _syncLogToData() {
       const l = this._log
-      this.todayLogged       = l.todayLogged.value
-      this.todaySmoked       = l.todaySmoked.value
-      this.todayDateLabel    = l.todayDateLabel.value
-      this.currentStreak     = l.currentStreak.value
+      this.todayLogged        = l.todayLogged.value
+      this.todaySmoked        = l.todaySmoked.value
+      this.todayDateLabel     = l.todayDateLabel.value
+      this.currentStreak      = l.currentStreak.value
       this.totalSmokeFreedays = l.totalSmokeFreedays.value
-      this.dailyLogs         = l.dailyLogs.value
+      this.dailyLogs          = l.dailyLogs.value
+
+      const todayStr = (() => {
+        const now = new Date()
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      })()
+      const todayEntry = this.dailyLogs.find(l => l.date === todayStr)
+      this.todaySmokedCount = todayEntry?.smokedCount || 0
     },
 
     _syncBreathingToData() {
@@ -433,11 +616,11 @@ export default {
 
     _syncTapToData() {
       const t = this._tap
-      this.tapGameStarted  = t.tapGameStarted.value
-      this.tapGameDone     = t.tapGameDone.value
-      this.tapCount        = t.tapCount.value
-      this.tapTimeLeft     = t.tapTimeLeft.value
-      this.tapProgress     = t.tapProgress.value
+      this.tapGameStarted   = t.tapGameStarted.value
+      this.tapGameDone      = t.tapGameDone.value
+      this.tapCount         = t.tapCount.value
+      this.tapTimeLeft      = t.tapTimeLeft.value
+      this.tapProgress      = t.tapProgress.value
       this.tapResultMessage = t.tapResultMessage.value
     },
 
@@ -465,10 +648,9 @@ export default {
       this.pricePerPack     = pricePerPack
       this.hasStarted       = true
 
-      // Update composable refs
-      this._quitDateRef.value        = quitDate
+      this._quitDateRef.value         = quitDate
       this._cigarettesPerDayRef.value = cigarettesPerDay
-      this._pricePerPackRef.value    = pricePerPack
+      this._pricePerPackRef.value     = pricePerPack
 
       this._saveToStorage()
       this._recalc()
@@ -487,7 +669,7 @@ export default {
 
     handleReset() {
       this.$q.dialog({
-        title: 'Reset Progress',
+        title:   'Reset Progress',
         message: 'Are you sure you want to reset all your progress? This will clear everything including your device registration.',
         cancel: true, persistent: true, color: 'negative',
       }).onOk(async () => {
@@ -506,9 +688,9 @@ export default {
     // STATS
     // ════════════════════════════════════════════
     _recalc() {
-      this._quitDateRef.value        = this.quitDate
+      this._quitDateRef.value         = this.quitDate
       this._cigarettesPerDayRef.value = this.cigarettesPerDay
-      this._pricePerPackRef.value    = this.pricePerPack
+      this._pricePerPackRef.value     = this.pricePerPack
       this._statsComp.calculate()
       this._syncStatsToData()
     },
@@ -533,18 +715,44 @@ export default {
       this._syncLogToData()
     },
 
-    onLogDay(smoked) {
+    onLogDay({ smoked, smokedCount = 0 }) {
       this._log.dailyLogs.value = this.dailyLogs
-      this._log.logDay(smoked)
+      this._log.logDay(smoked, smokedCount)
       this._syncLogToData()
+      this._recalc()
 
+      const now   = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+      const existingIdx = this.dailyLogs.findIndex(l => l.date === today)
+      if (existingIdx >= 0) {
+        this.dailyLogs[existingIdx] = { date: today, smoked, smokedCount }
+      } else {
+        this.dailyLogs.push({ date: today, smoked, smokedCount })
+      }
+
+      this.todaySmokedCount = smoked ? smokedCount : 0
+
+      const avoided = smoked ? Math.max(0, Number(this.cigarettesPerDay) - smokedCount) : Number(this.cigarettesPerDay)
       this.$q.notify({
-        color:    smoked ? 'orange-6' : 'green-6',
-        message:  smoked ? "That's okay. Every day is a fresh start. 💛" : `🎉 Great job! ${this.currentStreak} day streak!`,
+        color:    smoked ? 'orange-7' : 'positive',
+        message:  smoked
+          ? `You smoked ${smokedCount} today — ${avoided} still avoided! Tomorrow is a new start 💛`
+          : `🎉 Great job! ${this.currentStreak} day streak!`,
         icon:     smoked ? 'favorite' : 'emoji_events',
         position: 'center',
-        timeout:  3000,
+        timeout:  3500,
       })
+
+      if (this.isOnline && this.deviceId) {
+        userAPI.logDailyEntry(this.deviceId, today, smoked, smokedCount).catch((error) => {
+          console.error('Daily log sync failed, queuing for retry:', error)
+          this._sync.addToSyncQueue('daily_log', { deviceId: this.deviceId, date: today, smoked, smokedCount })
+        })
+      } else {
+        this._sync.addToSyncQueue('daily_log', { deviceId: this.deviceId, date: today, smoked, smokedCount })
+      }
+
       this._saveToStorage()
     },
 
@@ -557,10 +765,10 @@ export default {
           const perm = await Notification.requestPermission()
           if (perm === 'granted') {
             this.notificationsEnabled = true
-            this.$q.notify({ color: 'green-6', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 })
+            this.$q.notify({ color: 'positive', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 })
           } else {
             this.notificationsEnabled = false
-            this.$q.notify({ color: 'orange-6', message: 'Please allow notifications in your browser settings.', icon: 'notifications_off', position: 'center', timeout: 3000 })
+            this.$q.notify({ color: 'warning', message: 'Please allow notifications in your browser settings.', icon: 'notifications_off', position: 'center', timeout: 3000 })
           }
         } else {
           this.notificationsEnabled = false
@@ -606,13 +814,8 @@ export default {
       this._syncBreathingToData()
       this.showBreathingDialog = true
     },
-    startBreathing() {
-      this._breathing.startBreathing()
-      // Poll every second to sync to data (interval handles it)
-    },
-    stopBreathing() {
-      this._breathing.stopBreathing()
-    },
+    startBreathing() { this._breathing.startBreathing() },
+    stopBreathing()  { this._breathing.stopBreathing()  },
 
     openDelayDialog() {
       this._delay.resetDelayTimer()
@@ -641,14 +844,14 @@ export default {
       this.joinedChallenge       = this._community.joinedChallenge.value
       this.communityParticipants = this._community.communityParticipants.value
       this.leaderboard           = [...this._community.leaderboard.value]
-      this.$q.notify({ color: 'indigo-6', message: `You joined as "${this._community.myAlias.value}"! 🎉`, icon: 'groups', position: 'center', timeout: 2500 })
+      this.$q.notify({ color: 'positive', message: `You joined as "${this._community.myAlias.value}"! 🎉`, icon: 'groups', position: 'center', timeout: 2500 })
       this._saveToStorage()
     },
     onPostEncouragement() {
       const posted = this._community.postEncouragement()
       if (posted) {
         this.encouragementMessages = [...this._community.encouragementMessages.value]
-        this.$q.notify({ color: 'indigo-6', message: 'Message posted! 💙', icon: 'send', timeout: 1500 })
+        this.$q.notify({ color: 'positive', message: 'Message posted! 🌿', icon: 'send', timeout: 1500 })
       }
     },
 
@@ -684,7 +887,7 @@ export default {
     },
 
     openUserDetails(user) {
-      this.selectedUser  = user
+      this.selectedUser   = user
       this.showUserDialog = true
     },
 
@@ -693,15 +896,40 @@ export default {
       try {
         const users = await userAPI.getAllUsers()
         this.allUsers = users.map(u => ({
-          id: u.device_id, name: u.name, quitDate: u.quit_date,
-          cigarettesPerDay: u.cigarettes_per_day, pricePerPack: u.price_per_pack,
-          daysSmokeeFree: u.days_smoke_free, cigarettesAvoided: u.cigarettes_avoided,
-          moneySaved: u.money_saved, lastUpdated: u.last_updated,
-          opensToday: parseInt(u.opens_today) || 0,
-          opensThisMonth: parseInt(u.opens_this_month) || 0,
-          totalOpens: parseInt(u.total_opens) || 0,
-          lastAppOpen: u.last_app_open,
+          id:                u.device_id,
+          name:              u.name,
+          quitDate:          u.quit_date,
+          cigarettesPerDay:  u.cigarettes_per_day,
+          pricePerPack:      u.price_per_pack,
+          daysSmokeeFree:    u.days_smoke_free,
+          cigarettesAvoided: u.cigarettes_avoided,
+          moneySaved:        u.money_saved,
+          lastUpdated:       u.last_updated,
+          opensToday:        parseInt(u.opens_today)      || 0,
+          opensThisMonth:    parseInt(u.opens_this_month) || 0,
+          totalOpens:        parseInt(u.total_opens)      || 0,
+          lastAppOpen:       u.last_app_open,
         }))
+      } catch (error) { console.error(error) }
+    },
+
+    async _loadDailyLogs() {
+      if (!this.isOnline || !this.deviceId) return
+      try {
+        const logs = await userAPI.getDailyLogs(this.deviceId)
+        if (Array.isArray(logs) && logs.length > 0) {
+          const dbMap = {}
+          logs.forEach(l => { dbMap[l.date] = l })
+          const localOnly = this.dailyLogs.filter(l => !Object.hasOwn(dbMap, l.date))
+          this.dailyLogs = [
+            ...localOnly,
+            ...logs.map(l => ({ date: l.date, smoked: l.smoked, smokedCount: l.smokedCount || 0 })),
+          ]
+          this._log.dailyLogs.value = this.dailyLogs
+          this._log.checkTodayLog()
+          this._syncLogToData()
+          this._saveToStorage()
+        }
       } catch (error) { console.error(error) }
     },
 
@@ -718,6 +946,7 @@ export default {
           await this._sync.syncProgress(this.deviceId, this.stats.days, this.stats.cigarettesAvoided, this.stats.moneySaved)
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
         if (this.showAdmin && this.isAdmin) await this._loadAllUsers()
+        if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
       } catch (error) { console.error(error) }
     },
 
@@ -740,7 +969,11 @@ export default {
     _onOffline() { this.isOnline = false },
 
     _sendBeacon() {
-      const payload = { daysSmokeeFree: this.stats.days, cigarettesAvoided: this.stats.cigarettesAvoided, moneySaved: parseFloat(this.stats.moneySaved.toFixed(2)) }
+      const payload = {
+        daysSmokeeFree:    this.stats.days,
+        cigarettesAvoided: this.stats.cigarettesAvoided,
+        moneySaved:        parseFloat(this.stats.moneySaved.toFixed(2)),
+      }
       const url = `${process.env.API_URL || 'http://localhost:3000/api'}/users/${this.deviceId}/progress`
       navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }))
     },
@@ -748,14 +981,20 @@ export default {
     _saveToStorage() {
       if (!this.deviceId) return
       LocalStorage.set('quit-smoking-data', {
-        deviceId: this.deviceId, userName: this.userName,
-        quitDate: this.quitDate, cigarettesPerDay: this.cigarettesPerDay, pricePerPack: this.pricePerPack,
-        hasStarted: this.hasStarted, stats: this.stats, lastCalculated: new Date().toISOString(),
-        dailyLogs: this.dailyLogs, notificationsEnabled: this.notificationsEnabled,
-        joinedChallenge: this.joinedChallenge,
-        myAlias:                 this._community?.myAlias?.value || '',
-        encouragementMessages:   this.encouragementMessages,
-        leaderboard:             this.leaderboard,
+        deviceId:              this.deviceId,
+        userName:              this.userName,
+        quitDate:              this.quitDate,
+        cigarettesPerDay:      this.cigarettesPerDay,
+        pricePerPack:          this.pricePerPack,
+        hasStarted:            this.hasStarted,
+        stats:                 this.stats,
+        lastCalculated:        new Date().toISOString(),
+        dailyLogs:             this.dailyLogs,
+        notificationsEnabled:  this.notificationsEnabled,
+        joinedChallenge:       this.joinedChallenge,
+        myAlias:               this._community?.myAlias?.value || '',
+        encouragementMessages: this.encouragementMessages,
+        leaderboard:           this.leaderboard,
       })
       LocalStorage.set('quit-smoking-sync-queue', this._sync?.syncQueue?.value || [])
     },
@@ -763,15 +1002,15 @@ export default {
     _loadFromStorage() {
       const d = LocalStorage.getItem('quit-smoking-data')
       if (d) {
-        this.deviceId         = d.deviceId || ''
-        this.userName         = d.userName || ''
-        this.quitDate         = d.quitDate || ''
-        this.cigarettesPerDay = d.cigarettesPerDay || ''
-        this.pricePerPack     = d.pricePerPack || ''
-        this.hasStarted       = d.hasStarted || false
-        this.dailyLogs        = d.dailyLogs || []
+        this.deviceId             = d.deviceId         || ''
+        this.userName             = d.userName         || ''
+        this.quitDate             = d.quitDate         || ''
+        this.cigarettesPerDay     = d.cigarettesPerDay || ''
+        this.pricePerPack         = d.pricePerPack     || ''
+        this.hasStarted           = d.hasStarted       || false
+        this.dailyLogs            = d.dailyLogs        || []
         this.notificationsEnabled = d.notificationsEnabled || false
-        this.joinedChallenge  = d.joinedChallenge || false
+        this.joinedChallenge      = d.joinedChallenge  || false
         if (d.encouragementMessages) this.encouragementMessages = d.encouragementMessages
         if (d.leaderboard)           this.leaderboard           = d.leaderboard
         if (d.myAlias && this._community) this._community.myAlias.value = d.myAlias
@@ -805,5 +1044,144 @@ export default {
 </script>
 
 <style scoped>
-/* All existing scoped styles remain here unchanged */
+/* ── Three-color theme tokens ─────────────────────────────── */
+
+/* 🌿 Light Sage Green */
+:deep(.pf-header-green) { background: linear-gradient(135deg, #7eab7e, #5d9460) !important; color: white !important; }
+:deep(.pf-badge-green)  { background: #d6efd6 !important; color: #2e4a2e !important; }
+:deep(.pf-text-green)   { color: #5d9460 !important; }
+
+/* 🍯 Honey Beige / Warm Sand */
+:deep(.pf-header-beige) { background: linear-gradient(135deg, #c8a870, #a87840) !important; color: white !important; }
+:deep(.pf-badge-beige)  { background: #ede0c4 !important; color: #5a4030 !important; }
+:deep(.pf-text-beige)   { color: #7a6040 !important; }
+
+/* 🌸 Dusty Rose */
+:deep(.pf-header-rose)  { background: linear-gradient(135deg, #c97a8a, #a85c6e) !important; color: white !important; }
+:deep(.pf-badge-rose)   { background: #fce8ee !important; color: #7a3048 !important; }
+:deep(.pf-text-rose)    { color: #c97a8a !important; }
+
+/* ── Page layout ─────────────────────────────────────────── */
+.pf-page-wrap {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Scrollable tab area — leaves 72px for the nav bar */
+.pf-tab-content {
+  padding-bottom: 84px;
+}
+
+/* ── Tab page section header ─────────────────────────────── */
+.tab-page-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px 4px;
+}
+
+/* ── Dashboard header pill ───────────────────────────────── */
+.dashboard-header {
+  background: linear-gradient(135deg, rgba(255,255,255,0.70), rgba(255,255,255,0.50));
+  border-radius: 18px;
+  border: 1.5px solid rgba(184, 212, 176, 0.60);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+
+/* ── Bottom Navigation Bar ───────────────────────────────── */
+.pf-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 253, 248, 0.96);
+  backdrop-filter: blur(16px);
+  border-top: 1.5px solid #d4c4a0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+  z-index: 100;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px); /* iPhone notch support */
+}
+
+.pf-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 4px 6px;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-nav-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 30px;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+  color: #b0a090;
+}
+
+.pf-nav-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #b0a090;
+  letter-spacing: 0.2px;
+  transition: all 0.2s ease;
+}
+
+/* Active state */
+.pf-nav-active .pf-nav-icon-wrap {
+  background: #d6efd6;
+  color: #5d9460;
+}
+
+.pf-nav-active .pf-nav-label {
+  color: #5d9460;
+  font-weight: 700;
+}
+
+/* Tap feedback */
+.pf-nav-item:active .pf-nav-icon-wrap {
+  transform: scale(0.92);
+  background: #ede0c4;
+}
+
+/* ── Admin toggle button ─────────────────────────────────── */
+.admin-toggle-btn {
+  background: rgba(168, 210, 168, 0.28) !important;
+  color: #5d9460 !important;
+  border: 1.5px solid #b8d4b0 !important;
+  border-radius: 10px !important;
+  font-weight: 600;
+}
+
+/* ── Reset button ────────────────────────────────────────── */
+.reset-btn {
+  color: #c97a8a !important;
+  border: 1.5px dashed #e8aab8 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+  background: rgba(201, 122, 138, 0.08) !important;
+  border-color: #c97a8a !important;
+  color: #a85c6e !important;
+}
 </style>

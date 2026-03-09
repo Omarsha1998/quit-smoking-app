@@ -4,7 +4,7 @@
 
       <q-card class="setup-card animate-fade-in">
 
-        <!-- Header -->
+        <!-- Header — Light Sage Green -->
         <q-card-section class="setup-header text-center">
           <div class="setup-icon-wrap q-mb-md">
             <q-icon name="emoji_events" size="40px" color="white" />
@@ -13,7 +13,7 @@
           <div class="setup-sub">Start your journey to a healthier life</div>
         </q-card-section>
 
-        <!-- Form -->
+        <!-- Form — Honey Beige -->
         <q-card-section class="q-pa-lg setup-body">
 
           <div class="field-label">📅 When did you quit?</div>
@@ -21,7 +21,6 @@
             v-model="form.quitDate"
             type="datetime-local"
             outlined
-            color="green-8"
             class="q-mb-md input-modern"
           />
 
@@ -30,7 +29,6 @@
             v-model.number="form.cigarettesPerDay"
             type="number"
             outlined
-            color="green-8"
             class="q-mb-md input-modern"
             min="1"
           />
@@ -41,7 +39,6 @@
             type="number"
             step="0.01"
             outlined
-            color="green-8"
             class="q-mb-lg input-modern"
             prefix="₱"
             min="0"
@@ -90,17 +87,16 @@ export default {
 </script>
 
 <style scoped>
-
 .setup-card {
   border-radius: 24px !important;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(45, 106, 79, 0.14) !important;
-  border: none !important;
+  box-shadow: 0 8px 32px rgba(93, 148, 96, 0.16) !important;
+  border: 1.5px solid #b8d4b0 !important;
 }
 
-/* ── Header ───────────────────────────────────── */
+/* ── Header — Light Sage Green ──────────────────── */
 .setup-header {
-  background: linear-gradient(135deg, #2D6A4F 0%, #40916C 60%, #74C69D 100%);
+  background: linear-gradient(135deg, #5d9460 0%, #7eab7e 60%, #a8d0a8 100%);
   padding: 36px 24px 32px;
   position: relative;
   overflow: hidden;
@@ -112,7 +108,7 @@ export default {
   top: -50px; right: -50px;
   width: 160px; height: 160px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
@@ -128,13 +124,13 @@ export default {
 
 .setup-icon-wrap {
   width: 80px; height: 80px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.20);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.30);
   position: relative; z-index: 1;
 }
 
@@ -148,37 +144,47 @@ export default {
 }
 
 .setup-sub {
-  color: rgba(255, 255, 255, 0.80);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 0.9rem;
   font-weight: 500;
   margin-top: 4px;
   position: relative; z-index: 1;
 }
 
-/* ── Form body ────────────────────────────────── */
+/* ── Form body — Honey Beige ────────────────────── */
 .setup-body {
-  background: #FDFAF5;
+  background: #f5ead8;
 }
 
-/* ── Field labels ─────────────────────────────── */
+/* ── Field labels ───────────────────────────────── */
 .field-label {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #2D6A4F;
+  color: #5d9460;
   margin-bottom: 6px;
   letter-spacing: 0.1px;
 }
 
-/* ── Input override ───────────────────────────── */
+/* ── Input override ─────────────────────────────── */
 .input-modern :deep(.q-field__control) {
   border-radius: 14px !important;
-  background: #FFFFFF !important;
+  background: #fdf5e8 !important;
 }
 
 .input-modern :deep(.q-field__native) {
-  font-family: 'Poppins', sans-serif;
   font-size: 0.95rem;
-  color: #1C2B23;
+  color: #2e4a2e;
 }
 
+.input-modern :deep(.q-field--outlined .q-field__control:before) {
+  border-color: #b8d4b0;
+}
+
+.input-modern :deep(.q-field--outlined.q-field--focused .q-field__control:after) {
+  border-color: #7eab7e;
+}
+
+.input-modern :deep(.q-field__label) {
+  color: #9aaa90;
+}
 </style>

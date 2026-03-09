@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios'
 
-const API_BASE_URL = process.env.API_URL
+const API_BASE_URL = process.env.VITE_API_URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,21 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
-
-api.interceptors.request.use(
-  (config) => {
-    const fullUrl = `${config.baseURL || ''}${config.url}`
-    console.log(`🚀 Calling Endpoint: [${config.method.toUpperCase()}] ${fullUrl}`)
-    if (config.data) {
-      console.log('📦 Request Data:', config.data)
-    }
-    return config
-  },
-  (error) => {
-    console.error('❌ Request Error:', error)
-    return Promise.reject(error)
-  },
-)
 
 api.interceptors.response.use(
   (response) => response,
@@ -102,9 +87,23 @@ export const userAPI = {
     }
   },
 
-  async getAllUsers() {
+  // ── Admin check ────────────────────────────────────────────────────────────
+  async checkAdmin(deviceId) {
     try {
-      const response = await api.get('/users')
+      const response = await api.get(`/users/${deviceId}/is-admin`)
+      return response.data.isAdmin === true
+    } catch (error) {
+      console.error('❌ Admin check failed:', error)
+      throw error
+    }
+  },
+
+  // ── Admin: get all users ───────────────────────────────────────────────────
+  async getAllUsers(deviceId) {
+    try {
+      const response = await api.get('/admin/users', {
+        headers: { 'x-device-id': deviceId },
+      })
       return response.data
     } catch (error) {
       console.error('❌ Get all users failed:', error)
@@ -123,14 +122,6 @@ export const userAPI = {
   },
 
   // ── Daily check-in log ─────────────────────────────────────────────────────
-
-  /**
-   * Save (or upsert) a daily smoke check-in to the database.
-   * POST /users/:deviceId/daily-log
-   * Body: { date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }
-   *
-   * smokedCount = 0 if smoke-free, otherwise how many cigarettes they smoked.
-   */
   async logDailyEntry(deviceId, date, smoked, smokedCount = 0) {
     try {
       const response = await api.post(`/users/${deviceId}/daily-log`, {
@@ -145,17 +136,69 @@ export const userAPI = {
     }
   },
 
-  /**
-   * Fetch all daily log entries for a user.
-   * GET /users/:deviceId/daily-logs
-   * Returns: [{ date: 'YYYY-MM-DD', smoked: boolean, smokedCount: number }, ...]
-   */
   async getDailyLogs(deviceId) {
     try {
       const response = await api.get(`/users/${deviceId}/daily-logs`)
       return response.data
     } catch (error) {
       console.error('❌ Get daily logs failed:', error)
+      throw error
+    }
+  },
+
+  // ── Community ──────────────────────────────────────────────────────────────
+
+  // Post an anonymous message to the encouragement wall
+  async postCommunityMessage(deviceId, alias, message) {
+    try {
+      const response = await api.post('/community/messages', { deviceId, alias, message })
+      return response.data
+    } catch (error) {
+      console.error('❌ Post community message failed:', error)
+      throw error
+    }
+  },
+
+  // Get latest 30 encouragement wall messages (anonymous)
+  async getCommunityMessages() {
+    try {
+      const response = await api.get('/community/messages')
+      return response.data
+    } catch (error) {
+      console.error('❌ Get community messages failed:', error)
+      throw error
+    }
+  },
+
+  // Join the 7-day challenge
+  async joinChallenge(deviceId, alias) {
+    try {
+      const response = await api.post('/community/challenge/join', { deviceId, alias })
+      return response.data
+    } catch (error) {
+      console.error('❌ Join challenge failed:', error)
+      throw error
+    }
+  },
+
+  // Get leaderboard (alias + days only — no personal info)
+  async getLeaderboard() {
+    try {
+      const response = await api.get('/community/leaderboard')
+      return response.data
+    } catch (error) {
+      console.error('❌ Get leaderboard failed:', error)
+      throw error
+    }
+  },
+
+  // Get total participants count
+  async getCommunityParticipants() {
+    try {
+      const response = await api.get('/community/participants')
+      return response.data.count || 0
+    } catch (error) {
+      console.error('❌ Get participants failed:', error)
       throw error
     }
   },

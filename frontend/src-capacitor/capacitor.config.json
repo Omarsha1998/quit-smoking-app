@@ -1,5 +1,11 @@
 {
   "appId": "org.capacitor.quasar.app",
-  "appName": "Quit Smoking",
+  "appName": "Puff Proof",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "backgroundColor": "#faf2e4"
+    }
+  },
   "webDir": "www"
 }

@@ -1,6 +1,5 @@
 // composables/useStats.js
 // Encapsulates all smoke-free statistics calculation logic.
-// Used by the main dashboard and admin views.
 
 import { ref, computed } from 'vue'
 import dayjs from 'dayjs'
@@ -36,24 +35,31 @@ export function useStats(quitDate, cigarettesPerDay, pricePerPack, dailyLogs) {
     const totalMinutes = Math.floor(diffMs / (1000 * 60))
     const totalHours   = Math.floor(diffMs / (1000 * 60 * 60))
 
-    // ── Days smoke-free: count only logged days where smoked === false ──────
-    // Falls back to calendar days if the user hasn't logged yet.
+    // ── Days smoke-free: count daily log entries where smoked === false ──────
+    // Each log entry = 1 day the user checked in.
+    // smokeFreeDays = how many of those days they did NOT smoke.
+    // We no longer fall back to clock time — if no logs yet, days = 0.
     const logs = dailyLogs?.value ?? []
-    const smokeFreeDays = logs.length > 0
-      ? logs.filter(l => l.smoked === false).length
-      : Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    // Cigarettes avoided is based on actual smoke-free days (not calendar days)
-    const cigarettesAvoided = Math.floor(smokeFreeDays * cigarettesPerDay.value)
-    const moneySaved        = (cigarettesAvoided / 20) * pricePerPack.value
+    const smokeFreeDays = logs.filter(l => l.smoked === false).length
+
+    // ── Cigarettes avoided: per logged day ───────────────────────────────────
+    // On a smoke-free day:  avoided = cigarettesPerDay
+    // On a smoked day:      avoided = max(0, cigarettesPerDay - smokedCount)
+    const cigarettesAvoided = logs.reduce((sum, l) => {
+      if (!l.smoked) return sum + Number(cigarettesPerDay.value)
+      return sum + Math.max(0, Number(cigarettesPerDay.value) - (l.smokedCount || 0))
+    }, 0)
+
+    const moneySaved = (cigarettesAvoided / 20) * Number(pricePerPack.value)
 
     stats.value = {
       days:              smokeFreeDays,
       hours:             totalHours % 24,
       minutes:           totalMinutes % 60,
-      cigarettesAvoided,
+      cigarettesAvoided: Math.floor(cigarettesAvoided),
       moneySaved,
-      lifeRegained:      cigarettesAvoided * 11,
+      lifeRegained:      Math.floor(cigarettesAvoided) * 11,
       healthBoost:       smokeFreeDays < 30 ? Math.round((smokeFreeDays / 30) * 100) : 100,
     }
   }
@@ -61,7 +67,7 @@ export function useStats(quitDate, cigarettesPerDay, pricePerPack, dailyLogs) {
   // ── Savings breakdown ──────────────────────────────────────────────────────
   const dailySavings   = computed(() => {
     if (!cigarettesPerDay.value || !pricePerPack.value) return 0
-    return (cigarettesPerDay.value / 20) * pricePerPack.value
+    return (Number(cigarettesPerDay.value) / 20) * Number(pricePerPack.value)
   })
   const weeklySavings  = computed(() => dailySavings.value * 7)
   const monthlySavings = computed(() => dailySavings.value * 30)
