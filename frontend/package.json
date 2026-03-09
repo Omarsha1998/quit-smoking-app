@@ -12,7 +12,7 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "quasar build",
-    "postinstall": "quasar prepare"
+    "build:pwa": "quasar build -m pwa"
   },
   "dependencies": {
     "@capacitor/local-notifications": "^7.0.5",
