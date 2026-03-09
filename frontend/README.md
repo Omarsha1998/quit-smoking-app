@@ -1,6 +1,6 @@
-# Quit Smoking (quit-smoking)
+# Puff Proof (quit-smoking)
 
-Quit Smoking
+Puff Proof
 
 ## Install the dependencies
 

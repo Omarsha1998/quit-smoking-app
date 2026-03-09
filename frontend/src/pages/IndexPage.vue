@@ -145,7 +145,7 @@
     <CravingDialog v-model="showCravingDialog" :tip="activeCravingTip" />
     <BreathingDialog v-model="showBreathingDialog" :breathing-started="breathingStarted" :breathing-done="breathingDone" :breath-phase="breathPhase" :breath-countdown="breathCountdown" :breath-cycles-done="breathCyclesDone" :breath-total-cycles="breathTotalCycles" :breath-label="breathLabel" :breath-phase-full="breathPhaseFull" :circle-style="breathCircleStyle" :breath-progress="breathProgress" @start="startBreathing" @stop="stopBreathing" />
     <DelayTimerDialog v-model="showDelayDialog" :delay-started="delayStarted" :delay-done="delayDone" :delay-minutes="delayMinutes" :delay-seconds="delaySeconds" :delay-progress="delayProgress" :delay-message="delayMessage" @start="startDelayTimer" @stop="stopDelayTimer" />
-    <TapGameDialog v-model="showTapGameDialog" :tap-game-started="tapGameStarted" :tap-game-done="tapGameDone" :tap-count="tapCount" :tap-time-left="tapTimeLeft" :tap-progress="tapProgress" :result-message="tapResultMessage" @start="startTapGame" @stop="stopTapGame" @reset="resetTapGame" @tap="registerTap" />
+    <TapGameDialog v-model="showTapGameDialog" :tap-game-started="tapGameStarted" :tap-game-done="tapGameDone" :tap-count="tapCount" :tap-time-left="tapTimeLeft" :tap-progress="tapProgress" :result-message="tapResultMessage" :hits-to-destroy="60" @start="startTapGame" @stop="stopTapGame" @reset="resetTapGame" @tap="registerTap" />
 
     <CommunityDialog
       v-model="showCommunityDialog"

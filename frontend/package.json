@@ -1,8 +1,8 @@
 {
   "name": "quit-smoking",
   "version": "0.0.1",
-  "description": "Quit Smoking",
-  "productName": "Quit Smoking",
+  "description": "Puff Proof",
+  "productName": "Puff Proof",
   "author": "Omar <shaidomarsha@gmail.com>",
   "type": "module",
   "private": true,

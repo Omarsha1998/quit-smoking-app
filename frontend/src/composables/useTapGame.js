@@ -3,7 +3,8 @@
 
 import { ref, computed } from 'vue'
 
-const GAME_DURATION = 60
+const GAME_DURATION   = 60
+const HITS_TO_DESTROY = 60  // ← taps needed to destroy the cigarette
 
 export function useTapGame() {
   const tapGameStarted = ref(false)
@@ -28,6 +29,7 @@ export function useTapGame() {
       tapTimeLeft.value--
       if (tapTimeLeft.value <= 0) {
         clearInterval(tapInterval)
+        tapInterval          = null
         tapGameDone.value    = true
         tapGameStarted.value = false
       }
@@ -35,7 +37,17 @@ export function useTapGame() {
   }
 
   function registerTap() {
-    if (tapGameStarted.value) tapCount.value++
+    if (!tapGameStarted.value || tapGameDone.value) return  // ← guard
+    if (tapCount.value >= HITS_TO_DESTROY) return           // ← cap taps
+
+    tapCount.value++
+
+    // End game early if cigarette is fully destroyed
+    if (tapCount.value >= HITS_TO_DESTROY) {
+      if (tapInterval) { clearInterval(tapInterval); tapInterval = null }
+      tapGameDone.value    = true
+      tapGameStarted.value = false
+    }
   }
 
   function stop() {
@@ -46,9 +58,10 @@ export function useTapGame() {
   const tapProgress = computed(() => 1 - (tapTimeLeft.value / GAME_DURATION))
 
   const tapResultMessage = computed(() => {
-    if (tapCount.value > 80) return '🔥 Incredible focus!'
-    if (tapCount.value > 50) return '💪 Great job!'
-    return '👍 Nice try!'
+    if (tapCount.value >= HITS_TO_DESTROY) return '🔥 You destroyed it! Craving crushed!'
+    if (tapCount.value > 40)               return '💪 So close! Nearly destroyed!'
+    if (tapCount.value > 20)               return '👍 Nice try! Play again!'
+    return '😤 Keep tapping next time!'
   })
 
   return {
