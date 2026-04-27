@@ -3,6 +3,7 @@ import axios from 'axios'
 
 // const API_BASE_URL = process.env.VITE_API_URL
 const API_BASE_URL = import.meta.env.VITE_API_URL
+console.log(API_BASE_URL)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -168,7 +169,9 @@ export const userAPI = {
   // Get latest 30 encouragement wall messages (anonymous)
   async getCommunityMessages() {
     try {
+      console.log(API_BASE_URL)
       const response = await api.get('/community/messages')
+      console.log(response)
       return response.data
     } catch (error) {
       console.error('❌ Get community messages failed:', error)
