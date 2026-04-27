@@ -1,9 +1,7 @@
 <template>
   <div class="row justify-center items-center" style="min-height: 80vh">
     <div class="col-12 col-md-6">
-
       <q-card class="setup-card animate-fade-in">
-
         <!-- Header — Light Sage Green -->
         <q-card-section class="setup-header text-center">
           <div class="setup-icon-wrap q-mb-md">
@@ -15,7 +13,6 @@
 
         <!-- Form — Honey Beige -->
         <q-card-section class="q-pa-lg setup-body">
-
           <div class="field-label">📅 When did you quit?</div>
           <q-input
             v-model="form.quitDate"
@@ -52,10 +49,8 @@
             :disable="!form.quitDate || !form.cigarettesPerDay || !form.pricePerPack"
             unelevated
           />
-
         </q-card-section>
       </q-card>
-
     </div>
   </div>
 </template>
@@ -80,7 +75,15 @@ export default {
     submit() {
       const { quitDate, cigarettesPerDay, pricePerPack } = this.form
       if (!quitDate || !cigarettesPerDay || !pricePerPack) return
-      this.$emit('start', { ...this.form })
+
+      // datetime-local returns "2026-04-27T08:00" — server needs "2026-04-27"
+      const normalizedQuitDate = quitDate.split('T')[0]
+
+      this.$emit('start', {
+        quitDate: normalizedQuitDate,
+        cigarettesPerDay,
+        pricePerPack,
+      })
     },
   },
 }
@@ -105,8 +108,10 @@ export default {
 .setup-header::before {
   content: '';
   position: absolute;
-  top: -50px; right: -50px;
-  width: 160px; height: 160px;
+  top: -50px;
+  right: -50px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   pointer-events: none;
@@ -115,23 +120,27 @@ export default {
 .setup-header::after {
   content: '';
   position: absolute;
-  bottom: -30px; left: -20px;
-  width: 120px; height: 120px;
+  bottom: -30px;
+  left: -20px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   pointer-events: none;
 }
 
 .setup-icon-wrap {
-  width: 80px; height: 80px;
-  background: rgba(255, 255, 255, 0.20);
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.30);
-  position: relative; z-index: 1;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .setup-title {
@@ -139,7 +148,8 @@ export default {
   font-size: 1.8rem;
   font-weight: 900;
   color: #ffffff;
-  position: relative; z-index: 1;
+  position: relative;
+  z-index: 1;
   line-height: 1.2;
 }
 
@@ -148,7 +158,8 @@ export default {
   font-size: 0.9rem;
   font-weight: 500;
   margin-top: 4px;
-  position: relative; z-index: 1;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Form body — Honey Beige ────────────────────── */
