@@ -1384,29 +1384,44 @@ export default {
 
     async _syncOnOpen() {
       try {
-        if (this.deviceId) await this._sync.recordAppOpen(this.deviceId)
-        if (this.deviceId && this.userName)
-          await this._sync.syncRegistration(this.deviceId, this.userName)
-        if (this.deviceId && this.hasStarted && this.quitDate)
-          await this._sync.syncTrackingStart(
+        // Always record app open (that's the point of it)
+        await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
+
+        // Only re-register if we've never confirmed it reached the server
+        if (!this.registeredOnServer) {
+          await userAPI.register(this.deviceId, this.userName)
+          this.registeredOnServer = true
+          this._saveToStorage()
+        }
+
+        // Only re-send setup if not confirmed
+        if (this.hasStarted && !this.trackingStartedOnServer) {
+          await userAPI.startTracking(
             this.deviceId,
             this.userName,
             this.quitDate,
             this.cigarettesPerDay,
             this.pricePerPack,
           )
-        if (this.hasStarted && this.deviceId)
-          await this._sync.syncProgress(
+          this.trackingStartedOnServer = true
+          this._saveToStorage()
+        }
+
+        // Progress is the only thing worth syncing every open — it changes daily
+        if (this.hasStarted) {
+          await userAPI.updateProgress(
             this.deviceId,
             this.stats.days,
             this.stats.cigarettesAvoided,
             this.stats.moneySaved,
           )
+        }
+
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
+        if (this.hasStarted) await this._loadDailyLogs()
         if (this.showAdmin) await this._loadAllUsers()
-        if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
       } catch (error) {
-        console.error(error)
+        console.error('_syncOnOpen error:', error)
       }
     },
 
