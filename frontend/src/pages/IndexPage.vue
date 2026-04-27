@@ -562,7 +562,6 @@ export default {
       isJoining: false,
       // Admin
       showAdmin: false,
-      isAdmin: false,
       allUsers: [],
       showUserDialog: false,
       selectedUser: null,
@@ -1277,10 +1276,7 @@ export default {
       this.adminPin = ''
       this.pinError = false
     },
-    toggleAdminView() {
-      this.showAdmin = !this.showAdmin
-      if (this.showAdmin && this.isOnline) this._loadAllUsers()
-    },
+
     openUserDetails(user) {
       this.selectedUser = user
       this.showUserDialog = true
@@ -1306,17 +1302,6 @@ export default {
           lastAppOpen: u.last_app_open,
         }))
       } catch (error) {
-        if (error.response?.status === 403) {
-          this.isAdmin = false
-          this.showAdmin = false
-          this.$q.notify({
-            color: 'negative',
-            message: 'Access denied',
-            icon: 'lock',
-            position: 'center',
-            timeout: 2000,
-          })
-        }
         console.error(error)
       }
     },
@@ -1370,7 +1355,7 @@ export default {
             this.stats.moneySaved,
           )
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
-        if (this.showAdmin && this.isAdmin) await this._loadAllUsers()
+        if (this.showAdmin) await this._loadAllUsers()
         if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
       } catch (error) {
         console.error(error)
@@ -1443,11 +1428,6 @@ export default {
         if (this.hasStarted) {
           this._recalc()
           this._startInterval()
-        }
-        if (this.deviceId && this.isOnline) {
-          userAPI.checkAdmin(this.deviceId).then((result) => {
-            this.isAdmin = result
-          })
         }
       }
       this._sync?.loadSyncQueue()
