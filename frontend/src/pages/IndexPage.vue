@@ -728,7 +728,7 @@ export default {
     async _recordAppOpen() {
       try {
         await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
-      } catch (error) {
+      } catch () {
         this._sync.addToSyncQueue('app_open', {
           deviceId: this.deviceId,
         })
