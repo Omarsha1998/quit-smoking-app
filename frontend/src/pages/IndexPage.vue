@@ -715,8 +715,8 @@ export default {
             this._saveToStorage()
           }
         }
-      } catch (e) {
-        console.log('Notifications not available:', e)
+      } catch (error) {
+        console.log('Notifications not available:', error)
       }
     },
 
@@ -728,7 +728,7 @@ export default {
     async _recordAppOpen() {
       try {
         await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
-      } catch (e) {
+      } catch (error) {
         this._sync.addToSyncQueue('app_open', {
           deviceId: this.deviceId,
         })
@@ -797,8 +797,8 @@ export default {
               this.stats.cigarettesAvoided,
               this.stats.moneySaved,
             )
-          } catch (e) {
-            console.warn('Background progress sync failed:', e.message)
+          } catch (error) {
+            console.warn('Background progress sync failed:', error.message)
           }
         },
         5 * 60 * 1000,
@@ -850,8 +850,8 @@ export default {
         if (this._sync.syncQueue.value.length > 0) {
           await this._sync.processSyncQueue()
         }
-      } catch (e) {
-        console.warn('Online sync failed:', e.message)
+      } catch (error) {
+        console.warn('Online sync failed:', error.message)
       }
     },
 
@@ -1149,8 +1149,8 @@ export default {
           if (this._isNativePlatform()) {
             try {
               await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
-            } catch (e) {
-              console.log(e)
+            } catch (error) {
+              console.log(error)
             }
           }
           this.$q.notify({
@@ -1161,8 +1161,8 @@ export default {
             timeout: 2000,
           })
         }
-      } catch (e) {
-        console.error('Notification toggle error:', e)
+      } catch (error) {
+        console.error('Notification toggle error:', error)
         this.$q.notify({
           color: 'negative',
           message: 'Could not update notifications.',
@@ -1184,8 +1184,8 @@ export default {
       if (this._isNativePlatform()) {
         try {
           await LocalNotifications.cancel({ notifications: [{ id: 1 }] })
-        } catch (e) {
-          console.log(e)
+        } catch (error) {
+          console.log(error)
         }
         const scheduledAt = new Date()
         scheduledAt.setHours(9, 0, 0, 0)
@@ -1286,8 +1286,8 @@ export default {
             this.stats.cigarettesAvoided,
             this.stats.moneySaved,
           )
-        } catch (e) {
-          console.error('Progress pre-sync failed:', e)
+        } catch (error) {
+          console.error('Progress pre-sync failed:', error)
         }
       }
       await Promise.all([
@@ -1308,8 +1308,8 @@ export default {
           text: m.message,
           created_at: m.created_at,
         }))
-      } catch (e) {
-        console.error('Failed to load community messages:', e)
+      } catch (error) {
+        console.error('Failed to load community messages:', error)
       } finally {
         this.loadingMessages = false
       }
@@ -1321,8 +1321,8 @@ export default {
       try {
         const rows = await userAPI.getLeaderboard()
         this.leaderboard = rows.map((r) => ({ alias: r.name, days: Number(r.days) }))
-      } catch (e) {
-        console.error('Failed to load leaderboard:', e)
+      } catch (error) {
+        console.error('Failed to load leaderboard:', error)
       } finally {
         this.loadingLeaderboard = false
       }
@@ -1332,8 +1332,8 @@ export default {
       if (!this.isOnline) return
       try {
         this.communityParticipants = await userAPI.getCommunityParticipants()
-      } catch (e) {
-        console.error('Failed to load participants:', e)
+      } catch (error) {
+        console.error('Failed to load participants:', error)
       }
     },
 
@@ -1361,8 +1361,8 @@ export default {
           position: 'center',
           timeout: 2500,
         })
-      } catch (e) {
-        console.error('Failed to join challenge:', e)
+      } catch (error) {
+        console.error('Failed to join challenge:', error)
         this.$q.notify({
           color: 'negative',
           message: 'Could not join challenge. Try again.',
@@ -1399,8 +1399,8 @@ export default {
             timeout: 2000,
           })
         }
-      } catch (e) {
-        console.error('Failed to post message:', e)
+      } catch (error) {
+        console.error('Failed to post message:', error)
         this.$q.notify({
           color: 'negative',
           message: 'Could not post message. Try again.',
