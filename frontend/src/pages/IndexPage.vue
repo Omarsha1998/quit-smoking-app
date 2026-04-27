@@ -1399,7 +1399,7 @@ export default {
           await userAPI.startTracking(
             this.deviceId,
             this.userName,
-            this.quitDate,
+            this.quitDate.split('T')[0],
             this.cigarettesPerDay,
             this.pricePerPack,
           )
@@ -1480,7 +1480,7 @@ export default {
       if (d) {
         this.deviceId = d.deviceId || ''
         this.userName = d.userName || ''
-        this.quitDate = d.quitDate || ''
+        this.quitDate = d.quitDate.split('T')[0] || ''
         this.cigarettesPerDay = d.cigarettesPerDay || ''
         this.pricePerPack = d.pricePerPack || ''
         this.hasStarted = d.hasStarted || false
