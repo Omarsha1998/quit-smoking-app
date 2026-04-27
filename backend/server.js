@@ -149,13 +149,13 @@ const requireAdmin = async (req, res, next) => {
 // Routes
 // ─────────────────────────────────────────────────────────────────────────────
 
-app.get("/api/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
 
 // ── App opens ─────────────────────────────────────────────────────────────────
 
-app.post("/api/users/:deviceId/app-open", async (req, res) => {
+app.post("/users/:deviceId/app-open", async (req, res) => {
   const { deviceId } = req.params;
   const { isOnline } = req.body;
   console.log("📱 App opened:", { deviceId, isOnline });
@@ -187,7 +187,7 @@ app.post("/api/users/:deviceId/app-open", async (req, res) => {
   }
 });
 
-app.get("/api/users/:deviceId/app-opens", async (req, res) => {
+app.get("/users/:deviceId/app-opens", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
@@ -218,7 +218,7 @@ app.get("/api/users/:deviceId/app-opens", async (req, res) => {
 
 // ── Registration & setup ──────────────────────────────────────────────────────
 
-app.post("/api/users/register", async (req, res) => {
+app.post("/users/register", async (req, res) => {
   const { deviceId, userName } = req.body;
   console.log("📝 Registration request:", { deviceId, userName });
   if (!deviceId || !userName) {
@@ -254,7 +254,7 @@ app.post("/api/users/register", async (req, res) => {
   }
 });
 
-app.post("/api/users/start", async (req, res) => {
+app.post("/users/start", async (req, res) => {
   const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
     req.body;
   console.log("🚀 Start tracking request:", {
@@ -307,7 +307,7 @@ app.post("/api/users/start", async (req, res) => {
 
 // ── User data & progress ──────────────────────────────────────────────────────
 
-app.get("/api/users/:deviceId", async (req, res) => {
+app.get("/users/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
@@ -332,7 +332,7 @@ app.get("/api/users/:deviceId", async (req, res) => {
   }
 });
 
-app.post("/api/users/:deviceId/progress", async (req, res) => {
+app.post("/users/:deviceId/progress", async (req, res) => {
   const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
   if (
@@ -380,7 +380,7 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
 
 // ── Daily log ─────────────────────────────────────────────────────────────────
 
-app.post("/api/users/:deviceId/daily-log", async (req, res) => {
+app.post("/users/:deviceId/daily-log", async (req, res) => {
   const { deviceId } = req.params;
   const { date, smoked, smokedCount } = req.body;
   if (!date || smoked === undefined) {
@@ -424,7 +424,7 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
   }
 });
 
-app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
+app.get("/users/:deviceId/daily-logs", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const userCheck = await pool.query(
@@ -455,7 +455,7 @@ app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
 // ── Community ─────────────────────────────────────────────────────────────────
 
 // POST a message to the encouragement wall (stored anonymously with alias)
-app.post("/api/community/messages", async (req, res) => {
+app.post("/community/messages", async (req, res) => {
   const { deviceId, alias, message } = req.body;
 
   if (!deviceId || !alias || !message) {
@@ -498,7 +498,7 @@ app.post("/api/community/messages", async (req, res) => {
 });
 
 // GET recent encouragement wall messages (latest 30, anonymous — no device_id returned)
-app.get("/api/community/messages", async (req, res) => {
+app.get("/community/messages", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, alias, message, created_at
@@ -516,7 +516,7 @@ app.get("/api/community/messages", async (req, res) => {
 });
 
 // POST join the 7-day challenge (upsert — idempotent)
-app.post("/api/community/challenge/join", async (req, res) => {
+app.post("/community/challenge/join", async (req, res) => {
   const { deviceId, alias } = req.body;
 
   if (!deviceId || !alias) {
@@ -554,7 +554,7 @@ app.post("/api/community/challenge/join", async (req, res) => {
 // GET leaderboard — participants ranked by smoke-free days
 // Returns real name (from users table) + days
 // Encouragement wall stays alias-only; leaderboard uses real name so users can find themselves
-app.get("/api/community/leaderboard", async (req, res) => {
+app.get("/community/leaderboard", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
@@ -576,7 +576,7 @@ app.get("/api/community/leaderboard", async (req, res) => {
 });
 
 // GET total active challenge participants count
-app.get("/api/community/participants", async (req, res) => {
+app.get("/community/participants", async (req, res) => {
   try {
     const result = await pool.query("SELECT COUNT(*) FROM community_challenge");
     res.json({ count: parseInt(result.rows[0].count) || 0 });
@@ -590,7 +590,7 @@ app.get("/api/community/participants", async (req, res) => {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
-app.get("/api/users/:deviceId/is-admin", async (req, res) => {
+app.get("/users/:deviceId/is-admin", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
@@ -605,7 +605,7 @@ app.get("/api/users/:deviceId/is-admin", async (req, res) => {
   }
 });
 
-app.get("/api/admin/users", requireAdmin, async (req, res) => {
+app.get("/admin/users", requireAdmin, async (req, res) => {
   console.log("👥 Admin: get all users");
   try {
     const result = await pool.query(`
@@ -646,7 +646,7 @@ app.get("/api/admin/users", requireAdmin, async (req, res) => {
   }
 });
 
-app.delete("/api/users/:deviceId", async (req, res) => {
+app.delete("/users/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
@@ -670,7 +670,7 @@ app.delete("/api/users/:deviceId", async (req, res) => {
 
 // ── Debug ─────────────────────────────────────────────────────────────────────
 
-app.get("/api/debug/stats", async (req, res) => {
+app.get("/debug/stats", async (req, res) => {
   try {
     const [
       userCount,
@@ -714,5 +714,5 @@ app.get("/api/debug/stats", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`📊 API Base URL: http://localhost:${PORT}`);
 });
