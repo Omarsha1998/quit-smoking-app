@@ -646,18 +646,12 @@ export default {
     this._initComposables()
     window.addEventListener('online', this._onOnline)
     window.addEventListener('offline', this._onOffline)
-
     this._loadFromStorage()
     this._setupBackgroundSync()
 
-    // ✅ ONLY record app-open here
+    // ✅ Record app-open on every page load/refresh — no time gate
     if (this.isOnline && this.deviceId) {
-      this._recordAppOpen()
-    }
-
-    // ✅ Run sync separately (not tied to app-open)
-    if (this.isOnline && this.deviceId) {
-      this._syncNonOpen()
+      this._recordAppOpenAndSync()
     }
 
     this._checkTodayLog()
@@ -725,14 +719,17 @@ export default {
     // Also called on mobile resume via visibilitychange
     // NO time gate — every open = 1 record
     // ─────────────────────────────────────────────────────────
-    async _recordAppOpen() {
+    async _recordAppOpenAndSync() {
       try {
+        // ✅ Always record — every open/refresh/resume counts as 1 log
         await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
-      } catch () {
-        this._sync.addToSyncQueue('app_open', {
-          deviceId: this.deviceId,
-        })
+        console.log('✅ app-open recorded')
+      } catch (error) {
+        console.warn('⚠️ app-open failed:', error.message)
       }
+
+      // After recording open, do the rest of the sync (non-open things)
+      await this._syncNonOpen()
     },
 
     // ─────────────────────────────────────────────────────────
@@ -807,7 +804,7 @@ export default {
       // ✅ Mobile/PWA: user closes app and reopens = visibilitychange
       // Every time they come back visible = record a new app-open (no time gate)
       // We track if we already fired for THIS visibility session to avoid double-fire
-      // on the initial mount (mount already calls _recordAppOpen)
+      // on the initial mount (mount already calls _recordAppOpenAndSync)
       let firstVisibility = true
       document.addEventListener('visibilitychange', async () => {
         if (document.visibilityState !== 'visible') return
@@ -821,7 +818,7 @@ export default {
 
         // Every subsequent time the user brings the app back = new app-open log
         console.log('📱 App resumed — recording app-open')
-        await this._recordAppOpen()
+        await this._recordAppOpenAndSync()
       })
 
       window.addEventListener('beforeunload', () => {
