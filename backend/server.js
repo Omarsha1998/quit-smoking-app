@@ -2,7 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 
-const allowedOrigins = ["https://puff-proof.onrender.com", "http://localhost:"];
+const allowedOrigins = [
+  "https://puff-proof.onrender.com",
+  "http://localhost:9000",
+];
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
