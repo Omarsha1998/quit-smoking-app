@@ -380,7 +380,7 @@ import { useTapGame } from '../composables/useTapGame'
 
 import RegistrationCard from '../components/RegistrationCard.vue'
 import SetupForm from '../components/SetupForm.vue'
-import DailyCheckIn from '../components/DailyCheckIn.vue'
+import DailyCheckIn from '../components/Dailycheckin.vue'
 import StatsGrid from '../components/StatsGrid.vue'
 import SavingsBreakdown from '../components/SavingsBreakdown.vue'
 import CigarettesGraph from '../components/CigarettesGraph.vue'
