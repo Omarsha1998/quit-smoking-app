@@ -1245,7 +1245,7 @@ export default {
     },
 
     verifyPin() {
-      if (this.adminPin === '1234') {
+      if (this.adminPin === 'naifaharain') {
         this.showPinDialog = false
         this.showAdmin = true
         this.adminPin = ''
