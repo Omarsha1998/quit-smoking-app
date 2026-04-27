@@ -795,7 +795,7 @@ export default {
               this.stats.moneySaved,
             )
           } catch (error) {
-            console.warn('Background progress sync failed:', e.message)
+            console.warn('Background progress sync failed:', error.message)
           }
         },
         5 * 60 * 1000,
@@ -848,7 +848,7 @@ export default {
           await this._sync.processSyncQueue()
         }
       } catch (error) {
-        console.warn('Online sync failed:', e.message)
+        console.warn('Online sync failed:', error.message)
       }
     },
 
