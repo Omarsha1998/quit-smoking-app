@@ -19,7 +19,6 @@ api.interceptors.response.use(
 )
 
 export const userAPI = {
-
   // ── App opens ──────────────────────────────────────────────────────────────
   async recordAppOpen(deviceId, isOnline = true) {
     try {
@@ -55,7 +54,11 @@ export const userAPI = {
   async startTracking(deviceId, userName, quitDate, cigarettesPerDay, pricePerPack) {
     try {
       const response = await api.post('/users/start', {
-        deviceId, userName, quitDate, cigarettesPerDay, pricePerPack,
+        deviceId,
+        userName,
+        quitDate,
+        cigarettesPerDay,
+        pricePerPack,
       })
       return response.data
     } catch (error) {
@@ -78,7 +81,9 @@ export const userAPI = {
   async updateProgress(deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved) {
     try {
       const response = await api.post(`/users/${deviceId}/progress`, {
-        daysSmokeeFree, cigarettesAvoided, moneySaved,
+        daysSmokeeFree,
+        cigarettesAvoided,
+        moneySaved,
       })
       return response.data
     } catch (error) {
@@ -127,7 +132,7 @@ export const userAPI = {
       const response = await api.post(`/users/${deviceId}/daily-log`, {
         date,
         smoked,
-        smokedCount: smoked ? (parseInt(smokedCount) || 0) : 0,
+        smokedCount: smoked ? parseInt(smokedCount) || 0 : 0,
       })
       return response.data
     } catch (error) {
