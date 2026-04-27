@@ -644,7 +644,6 @@ export default {
 
     async _initNotifications() {
       try {
-        console.log()
         if (this._isNativePlatform()) {
           // Native APK — use Capacitor
           const { display } = await LocalNotifications.checkPermissions()

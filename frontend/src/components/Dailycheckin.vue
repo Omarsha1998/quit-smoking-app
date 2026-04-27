@@ -207,7 +207,6 @@ export default {
     },
 
     onConfirmSmoked() {
-      console.log()
       const count = parseInt(this.smokedCountInput) || 1
       this.$emit('log', { smoked: true, smokedCount: count })
       this.step = 1
