@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 
+const allowedOrigins = ["https://puff-proof.onrender.com", "http://localhost:"];
+
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
@@ -9,7 +11,20 @@ if (process.env.NODE_ENV !== "production") {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
+    allowedHeaders: ["content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 const pool = new Pool({
@@ -118,7 +133,7 @@ const requireAdmin = async (req, res, next) => {
   try {
     const result = await pool.query(
       "SELECT is_admin FROM users WHERE device_id = $1",
-      [deviceId]
+      [deviceId],
     );
     if (!result.rows[0] || result.rows[0].is_admin !== true) {
       return res.status(403).json({ error: "Forbidden" });
@@ -146,20 +161,29 @@ app.post("/api/users/:deviceId/app-open", async (req, res) => {
   console.log("📱 App opened:", { deviceId, isOnline });
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
     if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Device not found", message: "Please register first" });
+      return res
+        .status(404)
+        .json({ error: "Device not found", message: "Please register first" });
     }
     const result = await pool.query(
       `INSERT INTO app_opens (device_id, opened_at, is_online)
        VALUES ($1, CURRENT_TIMESTAMP, $2) RETURNING *`,
-      [deviceId, isOnline !== false]
+      [deviceId, isOnline !== false],
     );
-    res.json({ success: true, message: "App open recorded", appOpen: result.rows[0] });
+    res.json({
+      success: true,
+      message: "App open recorded",
+      appOpen: result.rows[0],
+    });
   } catch (error) {
     console.error("❌ Error recording app open:", error);
-    res.status(500).json({ error: "Failed to record app open", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to record app open", details: error.message });
   }
 });
 
@@ -173,20 +197,22 @@ app.get("/api/users/:deviceId/app-opens", async (req, res) => {
         COUNT(*) AS total_opens,
         MAX(opened_at) AS last_opened
        FROM app_opens WHERE device_id = $1`,
-      [deviceId]
+      [deviceId],
     );
     res.json({
       success: true,
       stats: {
-        opensToday:     parseInt(result.rows[0].opens_today)      || 0,
+        opensToday: parseInt(result.rows[0].opens_today) || 0,
         opensThisMonth: parseInt(result.rows[0].opens_this_month) || 0,
-        totalOpens:     parseInt(result.rows[0].total_opens)      || 0,
-        lastOpened:     result.rows[0].last_opened,
+        totalOpens: parseInt(result.rows[0].total_opens) || 0,
+        lastOpened: result.rows[0].last_opened,
       },
     });
   } catch (error) {
     console.error("❌ Error fetching app opens:", error);
-    res.status(500).json({ error: "Failed to fetch app opens", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch app opens", details: error.message });
   }
 });
 
@@ -196,7 +222,9 @@ app.post("/api/users/register", async (req, res) => {
   const { deviceId, userName } = req.body;
   console.log("📝 Registration request:", { deviceId, userName });
   if (!deviceId || !userName) {
-    return res.status(400).json({ error: "deviceId and userName are required" });
+    return res
+      .status(400)
+      .json({ error: "deviceId and userName are required" });
   }
   try {
     const result = await pool.query(
@@ -205,24 +233,44 @@ app.post("/api/users/register", async (req, res) => {
        ON CONFLICT (device_id)
        DO UPDATE SET name = EXCLUDED.name, updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, userName]
+      [deviceId, userName],
     );
     const isNewUser = result.rows[0].created_at === result.rows[0].updated_at;
     res.json({
-      success: true, deviceId, userName, isNewUser,
-      message: isNewUser ? "Device registered successfully" : "Device information updated",
+      success: true,
+      deviceId,
+      userName,
+      isNewUser,
+      message: isNewUser
+        ? "Device registered successfully"
+        : "Device information updated",
       user: result.rows[0],
     });
   } catch (error) {
     console.error("❌ Error registering device:", error);
-    res.status(500).json({ error: "Failed to register device", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to register device", details: error.message });
   }
 });
 
 app.post("/api/users/start", async (req, res) => {
-  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } = req.body;
-  console.log("🚀 Start tracking request:", { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack });
-  if (!deviceId || !userName || !quitDate || !cigarettesPerDay || !pricePerPack) {
+  const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
+    req.body;
+  console.log("🚀 Start tracking request:", {
+    deviceId,
+    userName,
+    quitDate,
+    cigarettesPerDay,
+    pricePerPack,
+  });
+  if (
+    !deviceId ||
+    !userName ||
+    !quitDate ||
+    !cigarettesPerDay ||
+    !pricePerPack
+  ) {
     return res.status(400).json({ error: "All fields are required" });
   }
   try {
@@ -237,18 +285,23 @@ app.post("/api/users/start", async (req, res) => {
          price_per_pack = EXCLUDED.price_per_pack,
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack]
+      [deviceId, userName, quitDate, cigarettesPerDay, pricePerPack],
     );
     const userData = result.rows[0];
     const isNewTracking = userData.created_at === userData.updated_at;
     res.json({
       success: true,
-      message: isNewTracking ? "Tracking started successfully" : "Tracking updated successfully",
-      isNewTracking, user: userData,
+      message: isNewTracking
+        ? "Tracking started successfully"
+        : "Tracking updated successfully",
+      isNewTracking,
+      user: userData,
     });
   } catch (error) {
     console.error("❌ Error starting tracking:", error);
-    res.status(500).json({ error: "Failed to start tracking", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to start tracking", details: error.message });
   }
 });
 
@@ -266,28 +319,39 @@ app.get("/api/users/:deviceId", async (req, res) => {
        FROM users u
        LEFT JOIN user_progress p ON u.device_id = p.device_id
        WHERE u.device_id = $1`,
-      [deviceId]
+      [deviceId],
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Device not found" });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Device not found" });
     res.json(result.rows[0]);
   } catch (error) {
     console.error("❌ Error fetching device:", error);
-    res.status(500).json({ error: "Failed to fetch device data", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch device data", details: error.message });
   }
 });
 
 app.post("/api/users/:deviceId/progress", async (req, res) => {
   const { deviceId } = req.params;
   const { daysSmokeeFree, cigarettesAvoided, moneySaved } = req.body;
-  if (daysSmokeeFree === undefined || cigarettesAvoided === undefined || moneySaved === undefined) {
+  if (
+    daysSmokeeFree === undefined ||
+    cigarettesAvoided === undefined ||
+    moneySaved === undefined
+  ) {
     return res.status(400).json({ error: "All progress fields are required" });
   }
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
     if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Device not found", message: "Please register and start tracking first" });
+      return res.status(404).json({
+        error: "Device not found",
+        message: "Please register and start tracking first",
+      });
     }
     const result = await pool.query(
       `INSERT INTO user_progress (device_id, days_smoke_free, cigarettes_avoided, money_saved, last_updated)
@@ -299,12 +363,18 @@ app.post("/api/users/:deviceId/progress", async (req, res) => {
          money_saved        = EXCLUDED.money_saved,
          last_updated       = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved]
+      [deviceId, daysSmokeeFree, cigarettesAvoided, moneySaved],
     );
-    res.json({ success: true, message: "Progress updated", progress: result.rows[0] });
+    res.json({
+      success: true,
+      message: "Progress updated",
+      progress: result.rows[0],
+    });
   } catch (error) {
     console.error("❌ Error updating progress:", error);
-    res.status(500).json({ error: "Failed to update progress", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to update progress", details: error.message });
   }
 });
 
@@ -321,12 +391,15 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
   }
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
     if (userCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Device not found", message: "Please register first" });
+      return res
+        .status(404)
+        .json({ error: "Device not found", message: "Please register first" });
     }
-    const count = smoked ? (parseInt(smokedCount) || 0) : 0;
+    const count = smoked ? parseInt(smokedCount) || 0 : 0;
     const result = await pool.query(
       `INSERT INTO daily_logs (device_id, date, smoked, smoked_count, created_at, updated_at)
        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -336,12 +409,18 @@ app.post("/api/users/:deviceId/daily-log", async (req, res) => {
          smoked_count = EXCLUDED.smoked_count,
          updated_at   = CURRENT_TIMESTAMP
        RETURNING *`,
-      [deviceId, date, smoked, count]
+      [deviceId, date, smoked, count],
     );
-    res.json({ success: true, message: "Daily log saved", log: result.rows[0] });
+    res.json({
+      success: true,
+      message: "Daily log saved",
+      log: result.rows[0],
+    });
   } catch (error) {
     console.error("❌ Error saving daily log:", error);
-    res.status(500).json({ error: "Failed to save daily log", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to save daily log", details: error.message });
   }
 });
 
@@ -349,9 +428,11 @@ app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
-    if (userCheck.rows.length === 0) return res.status(404).json({ error: "Device not found" });
+    if (userCheck.rows.length === 0)
+      return res.status(404).json({ error: "Device not found" });
     const result = await pool.query(
       `SELECT
          date::text                AS date,
@@ -360,12 +441,14 @@ app.get("/api/users/:deviceId/daily-logs", async (req, res) => {
        FROM daily_logs
        WHERE device_id = $1
        ORDER BY date DESC`,
-      [deviceId]
+      [deviceId],
     );
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching daily logs:", error);
-    res.status(500).json({ error: "Failed to fetch daily logs", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch daily logs", details: error.message });
   }
 });
 
@@ -376,17 +459,22 @@ app.post("/api/community/messages", async (req, res) => {
   const { deviceId, alias, message } = req.body;
 
   if (!deviceId || !alias || !message) {
-    return res.status(400).json({ error: "deviceId, alias, and message are required" });
+    return res
+      .status(400)
+      .json({ error: "deviceId, alias, and message are required" });
   }
   if (message.trim().length < 3 || message.trim().length > 120) {
-    return res.status(400).json({ error: "Message must be between 3 and 120 characters" });
+    return res
+      .status(400)
+      .json({ error: "Message must be between 3 and 120 characters" });
   }
 
   console.log("💬 Community message from:", alias);
 
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
     if (userCheck.rows.length === 0) {
       return res.status(404).json({ error: "Device not found" });
@@ -396,14 +484,16 @@ app.post("/api/community/messages", async (req, res) => {
       `INSERT INTO community_messages (device_id, alias, message, created_at)
        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
        RETURNING id, alias, message, created_at`,
-      [deviceId, alias.trim(), message.trim()]
+      [deviceId, alias.trim(), message.trim()],
     );
 
     console.log("✅ Community message saved:", result.rows[0].id);
     res.json({ success: true, message: result.rows[0] });
   } catch (error) {
     console.error("❌ Error saving community message:", error);
-    res.status(500).json({ error: "Failed to save message", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to save message", details: error.message });
   }
 });
 
@@ -414,12 +504,14 @@ app.get("/api/community/messages", async (req, res) => {
       `SELECT id, alias, message, created_at
        FROM community_messages
        ORDER BY created_at DESC
-       LIMIT 30`
+       LIMIT 30`,
     );
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching community messages:", error);
-    res.status(500).json({ error: "Failed to fetch messages", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch messages", details: error.message });
   }
 });
 
@@ -435,7 +527,8 @@ app.post("/api/community/challenge/join", async (req, res) => {
 
   try {
     const userCheck = await pool.query(
-      "SELECT device_id FROM users WHERE device_id = $1", [deviceId]
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
     );
     if (userCheck.rows.length === 0) {
       return res.status(404).json({ error: "Device not found" });
@@ -445,14 +538,16 @@ app.post("/api/community/challenge/join", async (req, res) => {
       `INSERT INTO community_challenge (device_id, alias, joined_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP)
        ON CONFLICT (device_id) DO NOTHING`,
-      [deviceId, alias.trim()]
+      [deviceId, alias.trim()],
     );
 
     console.log("✅ Challenge joined:", deviceId);
     res.json({ success: true, message: "Challenge joined" });
   } catch (error) {
     console.error("❌ Error joining challenge:", error);
-    res.status(500).json({ error: "Failed to join challenge", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to join challenge", details: error.message });
   }
 });
 
@@ -469,12 +564,14 @@ app.get("/api/community/leaderboard", async (req, res) => {
        JOIN users u ON cc.device_id = u.device_id
        LEFT JOIN user_progress p ON cc.device_id = p.device_id
        ORDER BY days DESC
-       LIMIT 20`
+       LIMIT 20`,
     );
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching leaderboard:", error);
-    res.status(500).json({ error: "Failed to fetch leaderboard", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch leaderboard", details: error.message });
   }
 });
 
@@ -485,7 +582,9 @@ app.get("/api/community/participants", async (req, res) => {
     res.json({ count: parseInt(result.rows[0].count) || 0 });
   } catch (error) {
     console.error("❌ Error fetching participants:", error);
-    res.status(500).json({ error: "Failed to fetch participants", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch participants", details: error.message });
   }
 });
 
@@ -495,7 +594,8 @@ app.get("/api/users/:deviceId/is-admin", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
-      "SELECT is_admin FROM users WHERE device_id = $1", [deviceId]
+      "SELECT is_admin FROM users WHERE device_id = $1",
+      [deviceId],
     );
     const isAdmin = result.rows[0]?.is_admin === true;
     res.json({ isAdmin });
@@ -540,7 +640,9 @@ app.get("/api/admin/users", requireAdmin, async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error("❌ Error fetching all users:", error);
-    res.status(500).json({ error: "Failed to fetch users", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch users", details: error.message });
   }
 });
 
@@ -548,13 +650,21 @@ app.delete("/api/users/:deviceId", async (req, res) => {
   const { deviceId } = req.params;
   try {
     const result = await pool.query(
-      "DELETE FROM users WHERE device_id = $1 RETURNING *", [deviceId]
+      "DELETE FROM users WHERE device_id = $1 RETURNING *",
+      [deviceId],
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: "Device not found" });
-    res.json({ success: true, message: "Device data deleted", deletedUser: result.rows[0] });
+    if (result.rows.length === 0)
+      return res.status(404).json({ error: "Device not found" });
+    res.json({
+      success: true,
+      message: "Device data deleted",
+      deletedUser: result.rows[0],
+    });
   } catch (error) {
     console.error("❌ Error deleting device:", error);
-    res.status(500).json({ error: "Failed to delete device", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to delete device", details: error.message });
   }
 });
 
@@ -562,26 +672,38 @@ app.delete("/api/users/:deviceId", async (req, res) => {
 
 app.get("/api/debug/stats", async (req, res) => {
   try {
-    const [userCount, progressCount, appOpensCount, dailyLogsCount, communityMsgCount, challengeCount, recentUsers, recentLogs] =
-      await Promise.all([
-        pool.query("SELECT COUNT(*) FROM users"),
-        pool.query("SELECT COUNT(*) FROM user_progress"),
-        pool.query("SELECT COUNT(*) FROM app_opens"),
-        pool.query("SELECT COUNT(*) FROM daily_logs"),
-        pool.query("SELECT COUNT(*) FROM community_messages"),
-        pool.query("SELECT COUNT(*) FROM community_challenge"),
-        pool.query("SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
-        pool.query("SELECT device_id, date, smoked, smoked_count FROM daily_logs ORDER BY date DESC LIMIT 10"),
-      ]);
+    const [
+      userCount,
+      progressCount,
+      appOpensCount,
+      dailyLogsCount,
+      communityMsgCount,
+      challengeCount,
+      recentUsers,
+      recentLogs,
+    ] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM users"),
+      pool.query("SELECT COUNT(*) FROM user_progress"),
+      pool.query("SELECT COUNT(*) FROM app_opens"),
+      pool.query("SELECT COUNT(*) FROM daily_logs"),
+      pool.query("SELECT COUNT(*) FROM community_messages"),
+      pool.query("SELECT COUNT(*) FROM community_challenge"),
+      pool.query(
+        "SELECT device_id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5",
+      ),
+      pool.query(
+        "SELECT device_id, date, smoked, smoked_count FROM daily_logs ORDER BY date DESC LIMIT 10",
+      ),
+    ]);
     res.json({
-      totalUsers:             parseInt(userCount.rows[0].count),
-      totalProgress:          parseInt(progressCount.rows[0].count),
-      totalAppOpens:          parseInt(appOpensCount.rows[0].count),
-      totalDailyLogs:         parseInt(dailyLogsCount.rows[0].count),
+      totalUsers: parseInt(userCount.rows[0].count),
+      totalProgress: parseInt(progressCount.rows[0].count),
+      totalAppOpens: parseInt(appOpensCount.rows[0].count),
+      totalDailyLogs: parseInt(dailyLogsCount.rows[0].count),
       totalCommunityMessages: parseInt(communityMsgCount.rows[0].count),
-      totalChallengeJoins:    parseInt(challengeCount.rows[0].count),
-      recentUsers:            recentUsers.rows,
-      recentDailyLogs:        recentLogs.rows,
+      totalChallengeJoins: parseInt(challengeCount.rows[0].count),
+      recentUsers: recentUsers.rows,
+      recentDailyLogs: recentLogs.rows,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
