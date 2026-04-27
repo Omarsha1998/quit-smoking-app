@@ -21,10 +21,8 @@ const PORT = process.env.PORT || 3000;
 // Security middlewares
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 1. Helmet — sets secure HTTP headers (XSS, clickjacking, sniffing, etc.)
 app.use(helmet());
 
-// 2. CORS
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -40,20 +38,30 @@ app.use(
   }),
 );
 
-// 3. Body size limit — prevents large payload attacks
 app.use(express.json({ limit: "10kb" }));
 
-// 4. Global rate limiter — 100 requests per 15 min per IP
+// Global — generous ceiling, just blocks abuse
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },
 });
 app.use(globalLimiter);
 
-// 5. Strict limiter for write/auth endpoints
+// Sync limiter — for endpoints fired in bursts on app open
+// (app-open, register, start, progress, daily-log, challenge/join)
+// 60 per 15 min = 4 per minute on average, plenty for normal use
+const syncLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+
+// Strict limiter — destructive / sensitive actions only (delete)
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -62,7 +70,7 @@ const writeLimiter = rateLimit({
   message: { error: "Too many requests, please try again later." },
 });
 
-// 6. Community message limiter — prevent spam
+// Community message spam guard
 const messageLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
@@ -136,7 +144,7 @@ app.get("/health", (req, res) => {
 
 // ── App opens ─────────────────────────────────────────────────────────────────
 
-app.post("/users/:deviceId/app-open", writeLimiter, async (req, res) => {
+app.post("/users/:deviceId/app-open", syncLimiter, async (req, res) => {
   const { deviceId } = req.params;
   if (!isValidDeviceId(deviceId)) {
     return res.status(400).json({ error: "Invalid device ID" });
@@ -194,7 +202,7 @@ app.get("/users/:deviceId/app-opens", async (req, res) => {
 
 // ── Registration & setup ──────────────────────────────────────────────────────
 
-app.post("/users/register", writeLimiter, async (req, res) => {
+app.post("/users/register", syncLimiter, async (req, res) => {
   const { deviceId, userName } = req.body;
 
   if (!deviceId || !userName) {
@@ -231,7 +239,7 @@ app.post("/users/register", writeLimiter, async (req, res) => {
   }
 });
 
-app.post("/users/start", writeLimiter, async (req, res) => {
+app.post("/users/start", syncLimiter, async (req, res) => {
   const { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack } =
     req.body;
 
@@ -320,7 +328,7 @@ app.get("/users/:deviceId", async (req, res) => {
   }
 });
 
-app.post("/users/:deviceId/progress", writeLimiter, async (req, res) => {
+app.post("/users/:deviceId/progress", syncLimiter, async (req, res) => {
   const { deviceId } = req.params;
   if (!isValidDeviceId(deviceId)) {
     return res.status(400).json({ error: "Invalid device ID" });
@@ -374,7 +382,7 @@ app.post("/users/:deviceId/progress", writeLimiter, async (req, res) => {
 
 // ── Daily log ─────────────────────────────────────────────────────────────────
 
-app.post("/users/:deviceId/daily-log", writeLimiter, async (req, res) => {
+app.post("/users/:deviceId/daily-log", syncLimiter, async (req, res) => {
   const { deviceId } = req.params;
   if (!isValidDeviceId(deviceId)) {
     return res.status(400).json({ error: "Invalid device ID" });
@@ -388,7 +396,6 @@ app.post("/users/:deviceId/daily-log", writeLimiter, async (req, res) => {
     return res.status(400).json({ error: "smoked must be a boolean" });
   }
 
-  // Reject future dates
   const today = new Date().toISOString().split("T")[0];
   if (date > today) {
     return res.status(400).json({ error: "Cannot log future dates" });
@@ -512,7 +519,7 @@ app.get("/community/messages", async (req, res) => {
   }
 });
 
-app.post("/community/challenge/join", writeLimiter, async (req, res) => {
+app.post("/community/challenge/join", syncLimiter, async (req, res) => {
   const { deviceId, alias } = req.body;
 
   if (!deviceId || !alias) {
@@ -698,7 +705,8 @@ app.use((req, res) => {
 
 const startServer = async () => {
   try {
-    await pool.connect(); // verify DB is reachable before proceeding
+    const client = await pool.connect();
+    client.release();
     console.log("✅ Database connected successfully");
 
     await runMigrations(pool);
