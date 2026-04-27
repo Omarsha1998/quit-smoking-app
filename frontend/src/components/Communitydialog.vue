@@ -7,7 +7,6 @@
     transition-hide="slide-down"
   >
     <div class="community-shell">
-
       <!-- ── Header ── -->
       <div class="comm-header">
         <div class="comm-header-glow" />
@@ -27,16 +26,16 @@
 
       <!-- ── Scrollable body ── -->
       <div class="comm-body">
-
         <!-- ══ CHALLENGE CARD ══ -->
         <div class="comm-section">
           <div class="comm-section-label"><span>🏆</span> Active Challenge</div>
 
           <div class="challenge-card" :class="{ 'challenge-joined': joinedChallenge }">
             <div class="challenge-badge">7 DAYS</div>
-            <div class="challenge-name">No Puff Challenge</div>
+            <div class="challenge-name">No Smoke Challenge</div>
             <div class="challenge-desc">
-              Stay smoke-free for 7 days alongside hundreds of anonymous participants. No pressure — just support.
+              Stay smoke-free for 7 days alongside hundreds of anonymous participants. No pressure —
+              just support.
             </div>
 
             <!-- 7-day progress dots based on real smoke-free days -->
@@ -46,9 +45,9 @@
                 :key="d"
                 class="challenge-day-dot"
                 :class="{
-                  'day-done':    smokeDays >= d,
+                  'day-done': smokeDays >= d,
                   'day-current': smokeDays === d - 1,
-                  'day-future':  smokeDays < d - 1,
+                  'day-future': smokeDays < d - 1,
                 }"
               >
                 <span v-if="smokeDays >= d">✓</span>
@@ -58,11 +57,7 @@
 
             <!-- Not joined yet -->
             <div v-if="!joinedChallenge">
-              <button
-                class="join-btn"
-                :disabled="isJoining"
-                @click="$emit('join')"
-              >
+              <button class="join-btn" :disabled="isJoining" @click="$emit('join')">
                 <span v-if="isJoining">Joining…</span>
                 <span v-else>🌱 Join the Challenge</span>
               </button>
@@ -84,7 +79,12 @@
           </div>
 
           <div v-if="loadingMessages" class="wall-loading">
-            <div class="wall-loading-dot" v-for="i in 3" :key="i" :style="{ animationDelay: (i * 0.15) + 's' }" />
+            <div
+              class="wall-loading-dot"
+              v-for="i in 3"
+              :key="i"
+              :style="{ animationDelay: i * 0.15 + 's' }"
+            />
           </div>
 
           <div v-else class="wall-messages">
@@ -133,12 +133,15 @@
 
         <!-- ══ LEADERBOARD ══ -->
         <div class="comm-section">
-          <div class="comm-section-label">
-            <span>🏅</span> Leaderboard
-          </div>
+          <div class="comm-section-label"><span>🏅</span> Leaderboard</div>
 
           <div v-if="loadingLeaderboard" class="wall-loading">
-            <div class="wall-loading-dot" v-for="i in 3" :key="i" :style="{ animationDelay: (i * 0.15) + 's' }" />
+            <div
+              class="wall-loading-dot"
+              v-for="i in 3"
+              :key="i"
+              :style="{ animationDelay: i * 0.15 + 's' }"
+            />
           </div>
 
           <div v-else-if="leaderboard.length" class="leaderboard">
@@ -176,9 +179,8 @@
           </div>
         </div>
 
-        <div style="height: 32px;" />
+        <div style="height: 32px" />
       </div>
-
     </div>
   </q-dialog>
 </template>
@@ -188,17 +190,17 @@ export default {
   name: 'CommunityDialog',
 
   props: {
-    modelValue:            { type: Boolean, required: true },
-    joinedChallenge:       { type: Boolean, required: true },
-    communityParticipants: { type: Number,  required: true },
-    newMessage:            { type: String,  required: true },
-    encouragementMessages: { type: Array,   required: true },
-    leaderboard:           { type: Array,   required: true },
-    smokeDays:             { type: Number,  default: 0 },
-    loadingMessages:       { type: Boolean, default: false },
-    loadingLeaderboard:    { type: Boolean, default: false },
-    isPosting:             { type: Boolean, default: false },
-    isJoining:             { type: Boolean, default: false },
+    modelValue: { type: Boolean, required: true },
+    joinedChallenge: { type: Boolean, required: true },
+    communityParticipants: { type: Number, required: true },
+    newMessage: { type: String, required: true },
+    encouragementMessages: { type: Array, required: true },
+    leaderboard: { type: Array, required: true },
+    smokeDays: { type: Number, default: 0 },
+    loadingMessages: { type: Boolean, default: false },
+    loadingLeaderboard: { type: Boolean, default: false },
+    isPosting: { type: Boolean, default: false },
+    isJoining: { type: Boolean, default: false },
   },
 
   emits: ['update:modelValue', 'update:newMessage', 'join', 'post'],
@@ -206,7 +208,7 @@ export default {
   computed: {
     maxLeaderboardDays() {
       if (!this.leaderboard.length) return 1
-      return Math.max(...this.leaderboard.map(e => e.days), 1)
+      return Math.max(...this.leaderboard.map((e) => e.days), 1)
     },
   },
 
@@ -217,10 +219,10 @@ export default {
       const now = new Date()
       const diffMs = now - d
       const diffMins = Math.floor(diffMs / 60000)
-      if (diffMins < 1)  return 'just now'
+      if (diffMins < 1) return 'just now'
       if (diffMins < 60) return `${diffMins}m ago`
       const diffHrs = Math.floor(diffMins / 60)
-      if (diffHrs < 24)  return `${diffHrs}h ago`
+      if (diffHrs < 24) return `${diffHrs}h ago`
       const diffDays = Math.floor(diffHrs / 24)
       return `${diffDays}d ago`
     },
@@ -248,28 +250,39 @@ export default {
 
 .comm-header-glow {
   position: absolute;
-  top: -40px; right: -40px;
-  width: 180px; height: 180px;
-  background: radial-gradient(circle, rgba(126,171,126,0.35) 0%, transparent 70%);
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(126, 171, 126, 0.35) 0%, transparent 70%);
   pointer-events: none;
 }
 
-.comm-header-content { position: relative; z-index: 1; }
+.comm-header-content {
+  position: relative;
+  z-index: 1;
+}
 
 .comm-close-btn {
   position: absolute;
-  top: 0; right: 0;
-  width: 36px; height: 36px;
+  top: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
   border: none;
-  background: rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   font-size: 14px;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s;
 }
-.comm-close-btn:hover { background: rgba(255,255,255,0.25); }
+.comm-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
 
 .comm-header-title {
   font-size: 1.7rem;
@@ -283,7 +296,7 @@ export default {
 
 .comm-header-sub {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.65);
   font-style: italic;
   margin-bottom: 14px;
   letter-spacing: 0.4px;
@@ -293,16 +306,17 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: rgba(255,255,255,0.13);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 5px 14px;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .comm-live-dot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   background: #7edb7e;
   border-radius: 50%;
   box-shadow: 0 0 6px #7edb7e;
@@ -311,8 +325,15 @@ export default {
 }
 
 @keyframes livePulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(1.4); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.4);
+  }
 }
 
 .comm-body {
@@ -322,7 +343,9 @@ export default {
   -webkit-overflow-scrolling: touch;
 }
 
-.comm-section { margin-bottom: 20px; }
+.comm-section {
+  margin-bottom: 20px;
+}
 
 .comm-section-label {
   display: flex;
@@ -351,7 +374,7 @@ export default {
   border-radius: 18px;
   padding: 20px;
   border: 2px solid #d4e8d4;
-  box-shadow: 0 4px 20px rgba(93,148,96,0.10);
+  box-shadow: 0 4px 20px rgba(93, 148, 96, 0.1);
   transition: border-color 0.3s;
 }
 
@@ -408,7 +431,7 @@ export default {
 .day-done {
   background: linear-gradient(135deg, #7eab7e, #5d9460);
   color: white;
-  box-shadow: 0 2px 8px rgba(93,148,96,0.35);
+  box-shadow: 0 2px 8px rgba(93, 148, 96, 0.35);
 }
 
 .day-current {
@@ -418,11 +441,19 @@ export default {
   animation: dayPulse 2s ease-in-out infinite;
 }
 
-.day-future { background: #f0ece4; color: #c0b090; }
+.day-future {
+  background: #f0ece4;
+  color: #c0b090;
+}
 
 @keyframes dayPulse {
-  0%, 100% { transform: scale(1); }
-  50%       { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 .join-btn {
@@ -435,13 +466,19 @@ export default {
   cursor: pointer;
   background: linear-gradient(135deg, #7eab7e, #5d9460);
   color: white;
-  box-shadow: 0 3px 14px rgba(93,148,96,0.30);
+  box-shadow: 0 3px 14px rgba(93, 148, 96, 0.3);
   font-family: 'Georgia', serif;
   transition: all 0.2s;
 }
 
-.join-btn:disabled { background: #c4dcc4; box-shadow: none; cursor: not-allowed; }
-.join-btn:not(:disabled):active { transform: scale(0.97); }
+.join-btn:disabled {
+  background: #c4dcc4;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.join-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
 
 .challenge-joined-msg {
   display: flex;
@@ -459,9 +496,12 @@ export default {
 .joined-check {
   background: linear-gradient(135deg, #7eab7e, #5d9460);
   color: white;
-  width: 22px; height: 22px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
   flex-shrink: 0;
 }
@@ -474,15 +514,23 @@ export default {
 }
 
 .wall-loading-dot {
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   background: #b8d4b0;
   border-radius: 50%;
   animation: loadBounce 0.9s ease-in-out infinite;
 }
 
 @keyframes loadBounce {
-  0%, 100% { transform: translateY(0); opacity: 0.5; }
-  50%       { transform: translateY(-6px); opacity: 1; }
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 .wall-messages {
@@ -495,12 +543,23 @@ export default {
   -webkit-overflow-scrolling: touch;
 }
 
-.wall-msg { border-radius: 12px; padding: 10px 14px; }
+.wall-msg {
+  border-radius: 12px;
+  padding: 10px 14px;
+}
 
-.wall-msg-color-0 { background: #f0fbf0; }
-.wall-msg-color-1 { background: #faf4ea; }
-.wall-msg-color-2 { background: #f0f4fb; }
-.wall-msg-color-3 { background: #fdf0f4; }
+.wall-msg-color-0 {
+  background: #f0fbf0;
+}
+.wall-msg-color-1 {
+  background: #faf4ea;
+}
+.wall-msg-color-2 {
+  background: #f0f4fb;
+}
+.wall-msg-color-3 {
+  background: #fdf0f4;
+}
 
 .wall-msg-alias {
   font-size: 0.68rem;
@@ -529,10 +588,18 @@ export default {
   font-style: italic;
 }
 
-.wall-empty-icon { font-size: 2rem; margin-bottom: 8px; }
+.wall-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
 
-.msg-pop-enter-active { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.msg-pop-enter-from   { opacity: 0; transform: translateY(-10px) scale(0.96); }
+.msg-pop-enter-active {
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.msg-pop-enter-from {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.96);
+}
 
 .post-box {
   background: #fff;
@@ -555,7 +622,10 @@ export default {
   box-sizing: border-box;
 }
 
-.post-input::placeholder { color: #b8c8b8; font-style: italic; }
+.post-input::placeholder {
+  color: #b8c8b8;
+  font-style: italic;
+}
 
 .post-row {
   display: flex;
@@ -565,7 +635,10 @@ export default {
   border-top: 1px solid #eef4ee;
 }
 
-.post-char-count { font-size: 0.68rem; color: #b8c8b8; }
+.post-char-count {
+  font-size: 0.68rem;
+  color: #b8c8b8;
+}
 
 .post-btn {
   background: linear-gradient(135deg, #7eab7e, #5d9460);
@@ -581,10 +654,20 @@ export default {
   min-width: 80px;
 }
 
-.post-btn:disabled { background: #d4e8d4; color: #9aaa90; cursor: not-allowed; }
-.post-btn:not(:disabled):active { transform: scale(0.95); }
+.post-btn:disabled {
+  background: #d4e8d4;
+  color: #9aaa90;
+  cursor: not-allowed;
+}
+.post-btn:not(:disabled):active {
+  transform: scale(0.95);
+}
 
-.leaderboard { display: flex; flex-direction: column; gap: 8px; }
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .lb-row {
   display: flex;
@@ -596,15 +679,28 @@ export default {
   border: 1.5px solid #e8e4da;
 }
 
-.lb-rank-1 { border-color: #f0d070; background: linear-gradient(135deg, #fffdf0, #fff); }
-.lb-rank-2 { border-color: #d0d8e0; }
-.lb-rank-3 { border-color: #e8c4a0; }
+.lb-rank-1 {
+  border-color: #f0d070;
+  background: linear-gradient(135deg, #fffdf0, #fff);
+}
+.lb-rank-2 {
+  border-color: #d0d8e0;
+}
+.lb-rank-3 {
+  border-color: #e8c4a0;
+}
 
-.lb-medal { font-size: 1.4rem; width: 36px; text-align: center; flex-shrink: 0; }
+.lb-medal {
+  font-size: 1.4rem;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
 
 .lb-rank-num {
   display: inline-flex;
-  width: 28px; height: 28px;
+  width: 28px;
+  height: 28px;
   background: #f0ece4;
   border-radius: 50%;
   align-items: center;
@@ -614,7 +710,10 @@ export default {
   color: #9a8a7a;
 }
 
-.lb-info { flex: 1; min-width: 0; }
+.lb-info {
+  flex: 1;
+  min-width: 0;
+}
 
 .lb-alias {
   font-size: 0.9rem;
@@ -640,9 +739,15 @@ export default {
   transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.lb-rank-1 .lb-bar { background: linear-gradient(90deg, #f0d070, #d4a820); }
+.lb-rank-1 .lb-bar {
+  background: linear-gradient(90deg, #f0d070, #d4a820);
+}
 
-.lb-days { text-align: right; flex-shrink: 0; line-height: 1; }
+.lb-days {
+  text-align: right;
+  flex-shrink: 0;
+  line-height: 1;
+}
 
 .lb-days-num {
   font-size: 1rem;
@@ -651,5 +756,8 @@ export default {
   display: block;
 }
 
-.lb-days-label { font-size: 0.62rem; color: #9aaa90; }
+.lb-days-label {
+  font-size: 0.62rem;
+  color: #9aaa90;
+}
 </style>

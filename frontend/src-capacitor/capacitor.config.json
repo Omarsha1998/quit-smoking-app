@@ -1,6 +1,6 @@
 {
   "appId": "org.capacitor.quasar.app",
-  "appName": "Puff Proof",
+  "appName": "HingaPH",
   "plugins": {
     "StatusBar": {
       "overlaysWebView": false,

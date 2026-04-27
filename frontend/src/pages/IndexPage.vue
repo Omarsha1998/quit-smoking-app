@@ -152,6 +152,52 @@
             text-color="pf-text-rose"
             :items="RISK_FACTORS"
           />
+          <!-- Nicotine Withdrawal Support -->
+          <q-card
+            class="q-mb-md"
+            style="border-radius: 18px; overflow: hidden; border: 1.5px solid #ddc8a8"
+          >
+            <q-card-section class="pf-header-beige text-white">
+              <div class="text-h6 text-weight-bold" style="letter-spacing: 0.3px">
+                <q-icon name="healing" class="q-mr-sm" />Nicotine Withdrawal Support
+              </div>
+            </q-card-section>
+
+            <q-card-section style="background: #f5ead8">
+              <InfoList
+                title="Common Symptoms"
+                icon="warning_amber"
+                header-color="pf-header-rose"
+                badge-color="pf-badge-rose"
+                text-color="pf-text-rose"
+                :items="WITHDRAWAL_SUPPORT.symptoms"
+              />
+              <InfoList
+                title="Coping Strategies"
+                icon="self_improvement"
+                header-color="pf-header-green"
+                badge-color="pf-badge-green"
+                text-color="pf-text-green"
+                :items="WITHDRAWAL_SUPPORT.coping"
+              />
+              <InfoList
+                title="Where to Get Help"
+                icon="local_hospital"
+                header-color="pf-header-beige"
+                badge-color="pf-badge-beige"
+                text-color="pf-text-beige"
+                :items="WITHDRAWAL_SUPPORT.helpContacts"
+              />
+              <InfoList
+                title="When to Ask for Help"
+                icon="emergency"
+                header-color="pf-header-rose"
+                badge-color="pf-badge-rose"
+                text-color="pf-text-rose"
+                :items="WITHDRAWAL_SUPPORT.whenToSeekHelp"
+              />
+            </q-card-section>
+          </q-card>
         </template>
 
         <template v-else-if="activeTab === 'track'">
@@ -370,6 +416,7 @@ import {
   EDUCATIONAL_TIPS,
   RISK_FACTORS,
   HEALTH_BENEFITS,
+  WITHDRAWAL_SUPPORT,
 } from '../constants/content'
 import { useStats } from '../composables/useStats'
 import { useDailyLog } from '../composables/useDailyLog'
@@ -579,6 +626,7 @@ export default {
       EDUCATIONAL_TIPS,
       RISK_FACTORS,
       HEALTH_BENEFITS,
+      WITHDRAWAL_SUPPORT,
     }
   },
 
@@ -977,7 +1025,7 @@ export default {
         `You're doing amazing, ${this.userName}! Stay strong 💪`,
         `${this.stats.days} days smoke-free! You've saved ₱${this.stats.moneySaved?.toFixed(2) || 0}. Keep going!`,
         `Remember: You are stronger than your cravings. ${this.stats.cigarettesAvoided} cigarettes avoided!`,
-        `Morning check-in! Log your day in PuffFree. You've got this! 🌟`,
+        `Morning check-in! Log your day in SmokeFree. You've got this! 🌟`,
       ]
       const body = tips[Math.floor(Math.random() * tips.length)]
 
@@ -995,7 +1043,7 @@ export default {
           notifications: [
             {
               id: 1,
-              title: 'PuffFree Daily Reminder 🌿',
+              title: 'SmokeFree Daily Reminder 🌿',
               body,
               schedule: { at: scheduledAt, repeats: true, every: 'day' },
               sound: null,
@@ -1018,7 +1066,7 @@ export default {
 
         this._notifTimer = setTimeout(() => {
           if (this.notificationsEnabled && Notification.permission === 'granted') {
-            new Notification('PuffFree Daily Reminder 🌿', {
+            new Notification('SmokeFree Daily Reminder 🌿', {
               body,
               icon: '/icons/icon-192x192.png',
             })
@@ -1037,7 +1085,7 @@ export default {
         `Remember: You are stronger than your cravings. ${this.stats.cigarettesAvoided} cigarettes avoided!`,
         "Morning check-in! Log your day in the app. You've got this! 🌟",
       ]
-      new Notification('PuffFree Daily Reminder', {
+      new Notification('SmokeFree Daily Reminder', {
         body: tips[Math.floor(Math.random() * tips.length)],
         icon: '/icons/favicon-128x128.png',
       })

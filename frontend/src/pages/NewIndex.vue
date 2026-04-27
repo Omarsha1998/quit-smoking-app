@@ -1,7 +1,6 @@
 <template>
   <!-- Outer wrapper: fills screen, positions bottom nav fixed -->
   <q-page class="bg-gradient pf-page-wrap">
-
     <!-- ══════════════ PRE-DASHBOARD FLOWS ══════════════ -->
     <div v-if="!deviceId || !hasStarted" class="q-pa-md">
       <RegistrationCard v-if="!deviceId" @register="handleRegister" />
@@ -10,10 +9,8 @@
 
     <!-- ══════════════ MAIN APP (after setup) ══════════════ -->
     <template v-else>
-
       <!-- Scrollable content area — padded bottom so content clears the nav bar -->
       <div class="pf-tab-content q-pa-md">
-
         <!-- ── ADMIN VIEW (overrides tabs) ── -->
         <template v-if="showAdmin">
           <q-btn
@@ -21,7 +18,8 @@
             label="← My Progress"
             icon="person"
             class="q-mb-md admin-toggle-btn"
-            flat size="md"
+            flat
+            size="md"
           />
           <AdminDashboard
             :all-users="allUsers"
@@ -34,13 +32,12 @@
 
         <!-- ════════ TAB: HOME ════════ -->
         <template v-else-if="activeTab === 'home'">
-
           <!-- Dashboard header -->
           <div class="text-center q-mb-lg animate-fade-in dashboard-header q-pa-md">
-            <div class="text-h4 text-weight-bold" style="color: var(--pf-text-dark);">
+            <div class="text-h4 text-weight-bold" style="color: var(--pf-text-dark)">
               {{ userName }}'s Progress
             </div>
-            <div class="text-subtitle1" style="color: var(--pf-text-mid);">
+            <div class="text-subtitle1" style="color: var(--pf-text-mid)">
               Keep going, you're doing great! 🌿
             </div>
           </div>
@@ -58,7 +55,11 @@
 
           <StatsGrid :stats="stats" />
 
-          <SavingsBreakdown :daily="dailySavings" :weekly="weeklySavings" :monthly="monthlySavings" />
+          <SavingsBreakdown
+            :daily="dailySavings"
+            :weekly="weeklySavings"
+            :monthly="monthlySavings"
+          />
 
           <CravingToolbar
             @crave="openCraving"
@@ -69,15 +70,15 @@
           />
 
           <MotivationalCarousel :quotes="MOTIVATIONAL_QUOTES" />
-
         </template>
 
         <!-- ════════ TAB: TIPS ════════ -->
         <template v-else-if="activeTab === 'tips'">
-
           <div class="tab-page-header q-mb-md">
-            <q-icon name="school" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
-            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">Tips & Education</span>
+            <q-icon name="school" size="28px" style="color: #7eab7e" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark)"
+              >Tips & Education</span
+            >
           </div>
 
           <!-- Health Milestones -->
@@ -89,12 +90,19 @@
             text-color="pf-text-green"
             :items="HEALTH_MILESTONES"
           >
-            <template #avatar="{ }">
-              <q-avatar style="background: var(--pf-green-pale); color: var(--pf-green-mid);" icon="check_circle" />
+            <template #avatar="{}">
+              <q-avatar
+                style="background: var(--pf-green-pale); color: var(--pf-green-mid)"
+                icon="check_circle"
+              />
             </template>
             <template #item="{ item }">
-              <q-item-label class="text-weight-bold" style="color: var(--pf-text-dark);">{{ item.time }}</q-item-label>
-              <q-item-label caption style="color: var(--pf-text-mid);">{{ item.benefit }}</q-item-label>
+              <q-item-label class="text-weight-bold" style="color: var(--pf-text-dark)">{{
+                item.time
+              }}</q-item-label>
+              <q-item-label caption style="color: var(--pf-text-mid)">{{
+                item.benefit
+              }}</q-item-label>
             </template>
           </InfoList>
 
@@ -127,15 +135,15 @@
             text-color="pf-text-rose"
             :items="RISK_FACTORS"
           />
-
         </template>
 
         <!-- ════════ TAB: TRACK ════════ -->
         <template v-else-if="activeTab === 'track'">
-
           <div class="tab-page-header q-mb-md">
-            <q-icon name="show_chart" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
-            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">My Progress</span>
+            <q-icon name="show_chart" size="28px" style="color: #7eab7e" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark)"
+              >My Progress</span
+            >
           </div>
 
           <CigarettesGraph
@@ -147,81 +155,103 @@
           <DiseaseRiskCountdown :milestones="diseaseRiskMilestones" />
 
           <NotificationsToggle :enabled="notificationsEnabled" @toggle="toggleNotifications" />
-
         </template>
 
         <!-- ════════ TAB: MORE ════════ -->
         <template v-else-if="activeTab === 'more'">
-
           <div class="tab-page-header q-mb-md">
-            <q-icon name="more_horiz" size="28px" style="color: #7eab7e;" class="q-mr-sm" />
-            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark);">More</span>
+            <q-icon name="more_horiz" size="28px" style="color: #7eab7e" class="q-mr-sm" />
+            <span class="text-h5 text-weight-bold" style="color: var(--pf-text-dark)">More</span>
           </div>
 
           <!-- User info card -->
-          <q-card class="q-mb-md" style="border-radius: 16px;">
-            <q-card-section style="background: #faf2e4;">
+          <q-card class="q-mb-md" style="border-radius: 16px">
+            <q-card-section style="background: #faf2e4">
               <div class="row items-center q-gutter-md">
                 <q-avatar
                   size="56px"
-                  style="background: linear-gradient(135deg, #7eab7e, #5d9460); color: white; font-size: 1.5rem; font-weight: 700;"
+                  style="
+                    background: linear-gradient(135deg, #7eab7e, #5d9460);
+                    color: white;
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                  "
                 >
                   {{ userName.charAt(0).toUpperCase() }}
                 </q-avatar>
                 <div>
-                  <div class="text-h6 text-weight-bold" style="color: #2e4a2e;">{{ userName }}</div>
-                  <div class="text-caption" style="color: #9aaa90;">{{ stats.days }} days smoke-free</div>
+                  <div class="text-h6 text-weight-bold" style="color: #2e4a2e">{{ userName }}</div>
+                  <div class="text-caption" style="color: #9aaa90">
+                    {{ stats.days }} days smoke-free
+                  </div>
                 </div>
               </div>
             </q-card-section>
           </q-card>
 
           <!-- Admin panel (if admin user) -->
-          <q-card v-if="isAdmin" class="q-mb-md" style="border-radius: 16px; border-color: #b8d4b0 !important;">
+          <q-card
+            v-if="isAdmin"
+            class="q-mb-md"
+            style="border-radius: 16px; border-color: #b8d4b0 !important"
+          >
             <q-item
               clickable
               @click="toggleAdminView"
-              style="background: #faf2e4; border-radius: 16px;"
+              style="background: #faf2e4; border-radius: 16px"
             >
               <q-item-section avatar>
-                <q-avatar style="background: #d6efd6; color: #5d9460;" icon="admin_panel_settings" />
+                <q-avatar style="background: #d6efd6; color: #5d9460" icon="admin_panel_settings" />
               </q-item-section>
               <q-item-section>
-                <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Admin Dashboard</q-item-label>
-                <q-item-label caption style="color: #9aaa90;">View all users & stats</q-item-label>
+                <q-item-label class="text-weight-bold" style="color: #2e4a2e"
+                  >Admin Dashboard</q-item-label
+                >
+                <q-item-label caption style="color: #9aaa90">View all users & stats</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-icon name="chevron_right" style="color: #b8d4b0;" />
+                <q-icon name="chevron_right" style="color: #b8d4b0" />
               </q-item-section>
             </q-item>
           </q-card>
 
           <!-- More options list -->
-          <q-card class="q-mb-md" style="border-radius: 16px;">
-            <q-list style="background: #faf2e4; border-radius: 16px;">
-
-              <q-item clickable @click="openCommunityDialog" style="border-radius: 12px 12px 0 0;">
+          <q-card class="q-mb-md" style="border-radius: 16px">
+            <q-list style="background: #faf2e4; border-radius: 16px">
+              <q-item clickable @click="openCommunityDialog" style="border-radius: 12px 12px 0 0">
                 <q-item-section avatar>
-                  <q-avatar style="background: #d6efd6; color: #5d9460;" icon="groups" />
+                  <q-avatar style="background: #d6efd6; color: #5d9460" icon="groups" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Community Challenge</q-item-label>
-                  <q-item-label caption style="color: #9aaa90;">Join & encourage others</q-item-label>
+                  <q-item-label class="text-weight-bold" style="color: #2e4a2e"
+                    >Community Challenge</q-item-label
+                  >
+                  <q-item-label caption style="color: #9aaa90"
+                    >Join & encourage others</q-item-label
+                  >
                 </q-item-section>
                 <q-item-section side>
-                  <q-icon name="chevron_right" style="color: #b8d4b0;" />
+                  <q-icon name="chevron_right" style="color: #b8d4b0" />
                 </q-item-section>
               </q-item>
 
-              <q-separator style="background: #ede0c4;" />
+              <q-separator style="background: #ede0c4" />
 
-              <q-item clickable @click="toggleNotifications(!notificationsEnabled)" style="border-radius: 0 0 12px 12px;">
+              <q-item
+                clickable
+                @click="toggleNotifications(!notificationsEnabled)"
+                style="border-radius: 0 0 12px 12px"
+              >
                 <q-item-section avatar>
-                  <q-avatar style="background: #fce8ee; color: #c97a8a;" icon="notifications" />
+                  <q-avatar style="background: #fce8ee; color: #c97a8a" icon="notifications" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label class="text-weight-bold" style="color: #2e4a2e;">Notifications</q-item-label>
-                  <q-item-label caption style="color: #9aaa90;">{{ notificationsEnabled ? 'Daily reminders ON' : 'Daily reminders OFF' }}</q-item-label>
+                  <q-item-label class="text-weight-bold" style="color: #2e4a2e"
+                    >Notifications</q-item-label
+                  >
+                  <q-item-label caption style="color: #9aaa90">{{
+                    notificationsEnabled ? 'Daily reminders ON' : 'Daily reminders OFF'
+                  }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
                   <q-toggle
@@ -232,7 +262,6 @@
                   />
                 </q-item-section>
               </q-item>
-
             </q-list>
           </q-card>
 
@@ -244,10 +273,9 @@
             class="full-width reset-btn q-mt-sm"
             flat
           />
-
         </template>
-
-      </div><!-- /pf-tab-content -->
+      </div>
+      <!-- /pf-tab-content -->
 
       <!-- ══════════════ BOTTOM NAV BAR ══════════════ -->
       <div class="pf-bottom-nav" v-if="!showAdmin">
@@ -263,9 +291,8 @@
           </div>
           <span class="pf-nav-label">{{ tab.label }}</span>
         </button>
-      </div>
-
-    </template><!-- /main app -->
+      </div> </template
+    ><!-- /main app -->
 
     <!-- ══════════════ DIALOGS ══════════════ -->
 
@@ -334,7 +361,6 @@
     />
 
     <UserDetailsDialog v-model="showUserDialog" :user="selectedUser" />
-
   </q-page>
 </template>
 
@@ -346,39 +372,44 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 
 // Constants
 import {
-  CRAVING_TIPS, MOTIVATIONAL_QUOTES, HEALTH_MILESTONES,
-  EDUCATIONAL_TIPS, RISK_FACTORS, HEALTH_BENEFITS, ADMIN_PIN,
+  CRAVING_TIPS,
+  MOTIVATIONAL_QUOTES,
+  HEALTH_MILESTONES,
+  EDUCATIONAL_TIPS,
+  RISK_FACTORS,
+  HEALTH_BENEFITS,
+  ADMIN_PIN,
 } from '../constants/content'
 
 // Composables
-import { useStats }      from '../composables/useStats'
-import { useDailyLog }   from '../composables/useDailyLog'
-import { useSync }       from '../composables/useSync'
-import { useBreathing }  from '../composables/useBreathing'
+import { useStats } from '../composables/useStats'
+import { useDailyLog } from '../composables/useDailyLog'
+import { useSync } from '../composables/useSync'
+import { useBreathing } from '../composables/useBreathing'
 import { useDelayTimer } from '../composables/useDelayTimer'
-import { useTapGame }    from '../composables/useTapGame'
-import { useCommunity }  from '../composables/useCommunity'
+import { useTapGame } from '../composables/useTapGame'
+import { useCommunity } from '../composables/useCommunity'
 
 // Components
-import RegistrationCard     from '../components/RegistrationCard.vue'
-import SetupForm            from '../components/SetupForm.vue'
-import DailyCheckIn         from '../components/DailyCheckIn.vue'
-import StatsGrid            from '../components/StatsGrid.vue'
-import SavingsBreakdown     from '../components/SavingsBreakdown.vue'
-import CigarettesGraph      from '../components/CigarettesGraph.vue'
+import RegistrationCard from '../components/RegistrationCard.vue'
+import SetupForm from '../components/SetupForm.vue'
+import DailyCheckIn from '../components/DailyCheckIn.vue'
+import StatsGrid from '../components/StatsGrid.vue'
+import SavingsBreakdown from '../components/SavingsBreakdown.vue'
+import CigarettesGraph from '../components/CigarettesGraph.vue'
 import DiseaseRiskCountdown from '../components/DiseaseRiskCountdown.vue'
-import CravingToolbar       from '../components/CravingToolbar.vue'
+import CravingToolbar from '../components/CravingToolbar.vue'
 import MotivationalCarousel from '../components/MotivationalCarousel.vue'
-import NotificationsToggle  from '../components/NotificationsToggle.vue'
-import InfoList             from '../components/InfoList.vue'
-import AdminDashboard       from '../components/AdminDashboard.vue'
-import CravingDialog        from '../components/CravingDialog.vue'
-import BreathingDialog      from '../components/BreathingDialog.vue'
-import DelayTimerDialog     from '../components/DelayTimerDialog.vue'
-import TapGameDialog        from '../components/TapGameDialog.vue'
-import CommunityDialog      from '../components/CommunityDialog.vue'
-import AdminPinDialog       from '../components/AdminPinDialog.vue'
-import UserDetailsDialog    from '../components/UserDetailsDialog.vue'
+import NotificationsToggle from '../components/NotificationsToggle.vue'
+import InfoList from '../components/InfoList.vue'
+import AdminDashboard from '../components/AdminDashboard.vue'
+import CravingDialog from '../components/CravingDialog.vue'
+import BreathingDialog from '../components/BreathingDialog.vue'
+import DelayTimerDialog from '../components/DelayTimerDialog.vue'
+import TapGameDialog from '../components/TapGameDialog.vue'
+import CommunityDialog from '../components/CommunityDialog.vue'
+import AdminPinDialog from '../components/AdminPinDialog.vue'
+import UserDetailsDialog from '../components/UserDetailsDialog.vue'
 
 import { userAPI } from '../services/api'
 
@@ -388,38 +419,59 @@ export default {
   name: 'IndexPage',
 
   components: {
-    RegistrationCard, SetupForm, DailyCheckIn,
-    StatsGrid, SavingsBreakdown, CigarettesGraph,
-    DiseaseRiskCountdown, CravingToolbar, MotivationalCarousel,
-    NotificationsToggle, InfoList, AdminDashboard,
-    CravingDialog, BreathingDialog, DelayTimerDialog,
-    TapGameDialog, CommunityDialog, AdminPinDialog, UserDetailsDialog,
+    RegistrationCard,
+    SetupForm,
+    DailyCheckIn,
+    StatsGrid,
+    SavingsBreakdown,
+    CigarettesGraph,
+    DiseaseRiskCountdown,
+    CravingToolbar,
+    MotivationalCarousel,
+    NotificationsToggle,
+    InfoList,
+    AdminDashboard,
+    CravingDialog,
+    BreathingDialog,
+    DelayTimerDialog,
+    TapGameDialog,
+    CommunityDialog,
+    AdminPinDialog,
+    UserDetailsDialog,
   },
 
   data() {
     return {
       // ── Core user state ──
-      deviceId:         '',
-      userName:         '',
-      hasStarted:       false,
-      quitDate:         '',
+      deviceId: '',
+      userName: '',
+      hasStarted: false,
+      quitDate: '',
       cigarettesPerDay: '',
-      pricePerPack:     '',
+      pricePerPack: '',
 
       // ── Stats ──
-      stats: { days: 0, hours: 0, minutes: 0, cigarettesAvoided: 0, moneySaved: 0, lifeRegained: 0, healthBoost: 0 },
-      dailySavings:          0,
-      weeklySavings:         0,
-      monthlySavings:        0,
+      stats: {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        cigarettesAvoided: 0,
+        moneySaved: 0,
+        lifeRegained: 0,
+        healthBoost: 0,
+      },
+      dailySavings: 0,
+      weeklySavings: 0,
+      monthlySavings: 0,
       diseaseRiskMilestones: [],
 
       // ── Daily log ──
-      dailyLogs:          [],
-      todayLogged:        false,
-      todaySmoked:        false,
-      todaySmokedCount:   0,
-      todayDateLabel:     '',
-      currentStreak:      0,
+      dailyLogs: [],
+      todayLogged: false,
+      todaySmoked: false,
+      todaySmokedCount: 0,
+      todayDateLabel: '',
+      currentStreak: 0,
       totalSmokeFreedays: 0,
 
       // ── Notifications ──
@@ -428,62 +480,62 @@ export default {
 
       // ── Craving ──
       showCravingDialog: false,
-      activeCravingTip:  '',
+      activeCravingTip: '',
 
       // ── Breathing ──
       showBreathingDialog: false,
-      breathingStarted:    false,
-      breathingDone:       false,
-      breathPhase:         'inhale',
-      breathCountdown:     4,
-      breathCyclesDone:    0,
-      breathTotalCycles:   6,
-      breathLabel:         'Inhale',
-      breathPhaseFull:     '',
-      breathCircleStyle:   {},
-      breathProgress:      0,
+      breathingStarted: false,
+      breathingDone: false,
+      breathPhase: 'inhale',
+      breathCountdown: 4,
+      breathCyclesDone: 0,
+      breathTotalCycles: 6,
+      breathLabel: 'Inhale',
+      breathPhaseFull: '',
+      breathCircleStyle: {},
+      breathProgress: 0,
 
       // ── Delay timer ──
       showDelayDialog: false,
-      delayStarted:    false,
-      delayDone:       false,
-      delayMinutes:    5,
-      delaySeconds:    0,
-      delayProgress:   0,
-      delayMessage:    '',
+      delayStarted: false,
+      delayDone: false,
+      delayMinutes: 5,
+      delaySeconds: 0,
+      delayProgress: 0,
+      delayMessage: '',
 
       // ── Tap game ──
       showTapGameDialog: false,
-      tapGameStarted:    false,
-      tapGameDone:       false,
-      tapCount:          0,
-      tapTimeLeft:       60,
-      tapProgress:       0,
-      tapResultMessage:  '',
+      tapGameStarted: false,
+      tapGameDone: false,
+      tapCount: 0,
+      tapTimeLeft: 60,
+      tapProgress: 0,
+      tapResultMessage: '',
 
       // ── Community ──
-      showCommunityDialog:   false,
-      joinedChallenge:       false,
+      showCommunityDialog: false,
+      joinedChallenge: false,
       communityParticipants: 247,
-      newMessage:            '',
+      newMessage: '',
       encouragementMessages: [],
-      leaderboard:           [],
+      leaderboard: [],
 
       // ── Admin ──
-      showAdmin:            false,
-      allUsers:             [],
-      showUserDialog:       false,
-      selectedUser:         null,
-      showPinDialog:        false,
-      adminPin:             '',
+      showAdmin: false,
+      allUsers: [],
+      showUserDialog: false,
+      selectedUser: null,
+      showPinDialog: false,
+      adminPin: '',
       isAdminAuthenticated: false,
 
       // ── Sync ──
-      isOnline:  navigator.onLine,
+      isOnline: navigator.onLine,
       syncQueue: [],
 
       // ── Intervals ──
-      updateInterval:         null,
+      updateInterval: null,
       backgroundSyncInterval: null,
 
       // ── Constants exposed to template ──
@@ -496,27 +548,35 @@ export default {
       // ── Bottom nav ──
       activeTab: 'home',
       navTabs: [
-        { name: 'home',  label: 'Home',  icon: 'home'       },
-        { name: 'tips',  label: 'Tips',  icon: 'school'     },
+        { name: 'home', label: 'Home', icon: 'home' },
+        { name: 'tips', label: 'Tips', icon: 'school' },
         { name: 'track', label: 'Track', icon: 'show_chart' },
-        { name: 'more',  label: 'More',  icon: 'more_horiz' },
+        { name: 'more', label: 'More', icon: 'more_horiz' },
       ],
     }
   },
 
   computed: {
-    isAdmin() { return this.userName.toLowerCase() === 'naifa' },
-    totalMoneySaved()        { return this.allUsers.reduce((s, u) => s + parseFloat(u.moneySaved || 0), 0) },
-    totalCigarettesAvoided() { return this.allUsers.reduce((s, u) => s + parseInt(u.cigarettesAvoided || 0), 0) },
+    isAdmin() {
+      return this.userName.toLowerCase() === 'naifa'
+    },
+    totalMoneySaved() {
+      return this.allUsers.reduce((s, u) => s + parseFloat(u.moneySaved || 0), 0)
+    },
+    totalCigarettesAvoided() {
+      return this.allUsers.reduce((s, u) => s + parseInt(u.cigarettesAvoided || 0), 0)
+    },
     avgDaysSmokeeFree() {
       if (!this.allUsers.length) return 0
-      return Math.round(this.allUsers.reduce((s, u) => s + u.daysSmokeeFree, 0) / this.allUsers.length)
+      return Math.round(
+        this.allUsers.reduce((s, u) => s + u.daysSmokeeFree, 0) / this.allUsers.length,
+      )
     },
   },
 
   mounted() {
     this._initComposables()
-    window.addEventListener('online',  this._onOnline)
+    window.addEventListener('online', this._onOnline)
     window.addEventListener('offline', this._onOffline)
     this._loadFromStorage()
     this._setupBackgroundSync()
@@ -526,9 +586,9 @@ export default {
   },
 
   beforeUnmount() {
-    window.removeEventListener('online',  this._onOnline)
+    window.removeEventListener('online', this._onOnline)
     window.removeEventListener('offline', this._onOffline)
-    if (this.updateInterval)       clearInterval(this.updateInterval)
+    if (this.updateInterval) clearInterval(this.updateInterval)
     if (this.notificationInterval) clearInterval(this.notificationInterval)
     this._breathing.stopBreathing()
     this._delay.stopDelayTimer()
@@ -541,86 +601,86 @@ export default {
     // COMPOSABLE WIRING
     // ════════════════════════════════════════════
     _initComposables() {
-      const quitDateRef         = ref(this.quitDate)
+      const quitDateRef = ref(this.quitDate)
       const cigarettesPerDayRef = ref(this.cigarettesPerDay)
-      const pricePerPackRef     = ref(this.pricePerPack)
+      const pricePerPackRef = ref(this.pricePerPack)
 
       const log = useDailyLog()
       log.dailyLogs.value = this.dailyLogs
       this._log = log
 
-      this._statsComp           = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
-      this._quitDateRef         = quitDateRef
+      this._statsComp = useStats(quitDateRef, cigarettesPerDayRef, pricePerPackRef, log.dailyLogs)
+      this._quitDateRef = quitDateRef
       this._cigarettesPerDayRef = cigarettesPerDayRef
-      this._pricePerPackRef     = pricePerPackRef
+      this._pricePerPackRef = pricePerPackRef
 
-      this._sync      = useSync()
+      this._sync = useSync()
       this._breathing = useBreathing()
-      this._delay     = useDelayTimer()
-      this._tap       = useTapGame()
+      this._delay = useDelayTimer()
+      this._tap = useTapGame()
       this._community = useCommunity()
 
       this.encouragementMessages = this._community.encouragementMessages.value
-      this.leaderboard           = this._community.leaderboard.value
+      this.leaderboard = this._community.leaderboard.value
     },
 
     _syncStatsToData() {
       const s = this._statsComp
-      this.stats                 = { ...s.stats.value }
-      this.dailySavings          = s.dailySavings.value
-      this.weeklySavings         = s.weeklySavings.value
-      this.monthlySavings        = s.monthlySavings.value
+      this.stats = { ...s.stats.value }
+      this.dailySavings = s.dailySavings.value
+      this.weeklySavings = s.weeklySavings.value
+      this.monthlySavings = s.monthlySavings.value
       this.diseaseRiskMilestones = s.diseaseRiskMilestones.value
     },
 
     _syncLogToData() {
       const l = this._log
-      this.todayLogged        = l.todayLogged.value
-      this.todaySmoked        = l.todaySmoked.value
-      this.todayDateLabel     = l.todayDateLabel.value
-      this.currentStreak      = l.currentStreak.value
+      this.todayLogged = l.todayLogged.value
+      this.todaySmoked = l.todaySmoked.value
+      this.todayDateLabel = l.todayDateLabel.value
+      this.currentStreak = l.currentStreak.value
       this.totalSmokeFreedays = l.totalSmokeFreedays.value
-      this.dailyLogs          = l.dailyLogs.value
+      this.dailyLogs = l.dailyLogs.value
 
       const todayStr = (() => {
         const now = new Date()
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       })()
-      const todayEntry = this.dailyLogs.find(l => l.date === todayStr)
+      const todayEntry = this.dailyLogs.find((l) => l.date === todayStr)
       this.todaySmokedCount = todayEntry?.smokedCount || 0
     },
 
     _syncBreathingToData() {
       const b = this._breathing
-      this.breathingStarted  = b.breathingStarted.value
-      this.breathingDone     = b.breathingDone.value
-      this.breathPhase       = b.breathPhase.value
-      this.breathCountdown   = b.breathCountdown.value
-      this.breathCyclesDone  = b.breathCyclesDone.value
+      this.breathingStarted = b.breathingStarted.value
+      this.breathingDone = b.breathingDone.value
+      this.breathPhase = b.breathPhase.value
+      this.breathCountdown = b.breathCountdown.value
+      this.breathCyclesDone = b.breathCyclesDone.value
       this.breathTotalCycles = b.breathTotalCycles
-      this.breathLabel       = b.breathLabel.value
-      this.breathPhaseFull   = b.breathPhaseFull.value
+      this.breathLabel = b.breathLabel.value
+      this.breathPhaseFull = b.breathPhaseFull.value
       this.breathCircleStyle = b.breathCircleStyle.value
-      this.breathProgress    = b.breathProgress.value
+      this.breathProgress = b.breathProgress.value
     },
 
     _syncDelayToData() {
       const d = this._delay
-      this.delayStarted  = d.delayStarted.value
-      this.delayDone     = d.delayDone.value
-      this.delayMinutes  = d.delayMinutes.value
-      this.delaySeconds  = d.delaySeconds.value
+      this.delayStarted = d.delayStarted.value
+      this.delayDone = d.delayDone.value
+      this.delayMinutes = d.delayMinutes.value
+      this.delaySeconds = d.delaySeconds.value
       this.delayProgress = d.delayProgress.value
-      this.delayMessage  = d.delayMessage.value
+      this.delayMessage = d.delayMessage.value
     },
 
     _syncTapToData() {
       const t = this._tap
-      this.tapGameStarted   = t.tapGameStarted.value
-      this.tapGameDone      = t.tapGameDone.value
-      this.tapCount         = t.tapCount.value
-      this.tapTimeLeft      = t.tapTimeLeft.value
-      this.tapProgress      = t.tapProgress.value
+      this.tapGameStarted = t.tapGameStarted.value
+      this.tapGameDone = t.tapGameDone.value
+      this.tapCount = t.tapCount.value
+      this.tapTimeLeft = t.tapTimeLeft.value
+      this.tapProgress = t.tapProgress.value
       this.tapResultMessage = t.tapResultMessage.value
     },
 
@@ -635,22 +695,29 @@ export default {
       }
       this._saveToStorage()
       if (this.isOnline) {
-        try { await userAPI.register(this.deviceId, this.userName) }
-        catch (error) { console.error(error); this._sync.addToSyncQueue('register', { deviceId: this.deviceId, userName: this.userName }) }
+        try {
+          await userAPI.register(this.deviceId, this.userName)
+        } catch (error) {
+          console.error(error)
+          this._sync.addToSyncQueue('register', {
+            deviceId: this.deviceId,
+            userName: this.userName,
+          })
+        }
       } else {
         this._sync.addToSyncQueue('register', { deviceId: this.deviceId, userName: this.userName })
       }
     },
 
     async handleStart({ quitDate, cigarettesPerDay, pricePerPack }) {
-      this.quitDate         = quitDate
+      this.quitDate = quitDate
       this.cigarettesPerDay = cigarettesPerDay
-      this.pricePerPack     = pricePerPack
-      this.hasStarted       = true
+      this.pricePerPack = pricePerPack
+      this.hasStarted = true
 
-      this._quitDateRef.value         = quitDate
+      this._quitDateRef.value = quitDate
       this._cigarettesPerDayRef.value = cigarettesPerDay
-      this._pricePerPackRef.value     = pricePerPack
+      this._pricePerPackRef.value = pricePerPack
 
       this._saveToStorage()
       this._recalc()
@@ -658,39 +725,65 @@ export default {
 
       try {
         if (this.isOnline) {
-          await this._sync.syncTrackingStart(this.deviceId, this.userName, quitDate, cigarettesPerDay, pricePerPack)
-          await this._sync.syncProgress(this.deviceId, this.stats.days, this.stats.cigarettesAvoided, this.stats.moneySaved)
+          await this._sync.syncTrackingStart(
+            this.deviceId,
+            this.userName,
+            quitDate,
+            cigarettesPerDay,
+            pricePerPack,
+          )
+          await this._sync.syncProgress(
+            this.deviceId,
+            this.stats.days,
+            this.stats.cigarettesAvoided,
+            this.stats.moneySaved,
+          )
         }
       } catch (error) {
         console.error(error)
-        this._sync.addToSyncQueue('start_tracking', { deviceId: this.deviceId, userName: this.userName, quitDate, cigarettesPerDay, pricePerPack })
+        this._sync.addToSyncQueue('start_tracking', {
+          deviceId: this.deviceId,
+          userName: this.userName,
+          quitDate,
+          cigarettesPerDay,
+          pricePerPack,
+        })
       }
     },
 
     handleReset() {
-      this.$q.dialog({
-        title:   'Reset Progress',
-        message: 'Are you sure you want to reset all your progress? This will clear everything including your device registration.',
-        cancel: true, persistent: true, color: 'negative',
-      }).onOk(async () => {
-        if (this.isOnline && this.deviceId) {
-          try { await userAPI.deleteUser(this.deviceId) } catch (error) { console.error(error) }
-        }
-        if (this.updateInterval) clearInterval(this.updateInterval)
-        LocalStorage.remove('quit-smoking-device-id')
-        LocalStorage.remove('quit-smoking-data')
-        LocalStorage.remove('quit-smoking-sync-queue')
-        Object.assign(this.$data, this.$options.data.call(this))
-      })
+      this.$q
+        .dialog({
+          title: 'Reset Progress',
+          message:
+            'Are you sure you want to reset all your progress? This will clear everything including your device registration.',
+          cancel: true,
+          persistent: true,
+          color: 'negative',
+        })
+        .onOk(async () => {
+          if (this.isOnline && this.deviceId) {
+            try {
+              await userAPI.deleteUser(this.deviceId)
+            } catch (error) {
+              console.error(error)
+            }
+          }
+          if (this.updateInterval) clearInterval(this.updateInterval)
+          LocalStorage.remove('quit-smoking-device-id')
+          LocalStorage.remove('quit-smoking-data')
+          LocalStorage.remove('quit-smoking-sync-queue')
+          Object.assign(this.$data, this.$options.data.call(this))
+        })
     },
 
     // ════════════════════════════════════════════
     // STATS
     // ════════════════════════════════════════════
     _recalc() {
-      this._quitDateRef.value         = this.quitDate
+      this._quitDateRef.value = this.quitDate
       this._cigarettesPerDayRef.value = this.cigarettesPerDay
-      this._pricePerPackRef.value     = this.pricePerPack
+      this._pricePerPackRef.value = this.pricePerPack
       this._statsComp.calculate()
       this._syncStatsToData()
     },
@@ -721,10 +814,10 @@ export default {
       this._syncLogToData()
       this._recalc()
 
-      const now   = new Date()
+      const now = new Date()
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
-      const existingIdx = this.dailyLogs.findIndex(l => l.date === today)
+      const existingIdx = this.dailyLogs.findIndex((l) => l.date === today)
       if (existingIdx >= 0) {
         this.dailyLogs[existingIdx] = { date: today, smoked, smokedCount }
       } else {
@@ -733,24 +826,36 @@ export default {
 
       this.todaySmokedCount = smoked ? smokedCount : 0
 
-      const avoided = smoked ? Math.max(0, Number(this.cigarettesPerDay) - smokedCount) : Number(this.cigarettesPerDay)
+      const avoided = smoked
+        ? Math.max(0, Number(this.cigarettesPerDay) - smokedCount)
+        : Number(this.cigarettesPerDay)
       this.$q.notify({
-        color:    smoked ? 'orange-7' : 'positive',
-        message:  smoked
+        color: smoked ? 'orange-7' : 'positive',
+        message: smoked
           ? `You smoked ${smokedCount} today — ${avoided} still avoided! Tomorrow is a new start 💛`
           : `🎉 Great job! ${this.currentStreak} day streak!`,
-        icon:     smoked ? 'favorite' : 'emoji_events',
+        icon: smoked ? 'favorite' : 'emoji_events',
         position: 'center',
-        timeout:  3500,
+        timeout: 3500,
       })
 
       if (this.isOnline && this.deviceId) {
         userAPI.logDailyEntry(this.deviceId, today, smoked, smokedCount).catch((error) => {
           console.error('Daily log sync failed, queuing for retry:', error)
-          this._sync.addToSyncQueue('daily_log', { deviceId: this.deviceId, date: today, smoked, smokedCount })
+          this._sync.addToSyncQueue('daily_log', {
+            deviceId: this.deviceId,
+            date: today,
+            smoked,
+            smokedCount,
+          })
         })
       } else {
-        this._sync.addToSyncQueue('daily_log', { deviceId: this.deviceId, date: today, smoked, smokedCount })
+        this._sync.addToSyncQueue('daily_log', {
+          deviceId: this.deviceId,
+          date: today,
+          smoked,
+          smokedCount,
+        })
       }
 
       this._saveToStorage()
@@ -765,10 +870,22 @@ export default {
           const perm = await Notification.requestPermission()
           if (perm === 'granted') {
             this.notificationsEnabled = true
-            this.$q.notify({ color: 'positive', message: 'Daily reminders enabled! 🔔', icon: 'notifications_active', position: 'center', timeout: 2000 })
+            this.$q.notify({
+              color: 'positive',
+              message: 'Daily reminders enabled! 🔔',
+              icon: 'notifications_active',
+              position: 'center',
+              timeout: 2000,
+            })
           } else {
             this.notificationsEnabled = false
-            this.$q.notify({ color: 'warning', message: 'Please allow notifications in your browser settings.', icon: 'notifications_off', position: 'center', timeout: 3000 })
+            this.$q.notify({
+              color: 'warning',
+              message: 'Please allow notifications in your browser settings.',
+              icon: 'notifications_off',
+              position: 'center',
+              timeout: 3000,
+            })
           }
         } else {
           this.notificationsEnabled = false
@@ -793,9 +910,9 @@ export default {
         `Good morning, ${this.userName}! You've gone ${this.stats.days} days smoke-free. Keep it up! 💪`,
         `Day ${this.stats.days} and counting! You've saved ₱${this.stats.moneySaved.toFixed(2)} so far. Amazing!`,
         `Remember: You are stronger than your cravings. ${this.stats.cigarettesAvoided} cigarettes avoided!`,
-        'Morning check-in! Log your day in the app. You\'ve got this! 🌟',
+        "Morning check-in! Log your day in the app. You've got this! 🌟",
       ]
-      new Notification('PuffFree Daily Reminder', {
+      new Notification('SmokeFree Daily Reminder', {
         body: tips[Math.floor(Math.random() * tips.length)],
         icon: '/icons/favicon-128x128.png',
       })
@@ -805,7 +922,7 @@ export default {
     // CRAVING TOOLS
     // ════════════════════════════════════════════
     openCraving() {
-      this.activeCravingTip  = CRAVING_TIPS[Math.floor(Math.random() * CRAVING_TIPS.length)]
+      this.activeCravingTip = CRAVING_TIPS[Math.floor(Math.random() * CRAVING_TIPS.length)]
       this.showCravingDialog = true
     },
 
@@ -814,26 +931,44 @@ export default {
       this._syncBreathingToData()
       this.showBreathingDialog = true
     },
-    startBreathing() { this._breathing.startBreathing() },
-    stopBreathing()  { this._breathing.stopBreathing()  },
+    startBreathing() {
+      this._breathing.startBreathing()
+    },
+    stopBreathing() {
+      this._breathing.stopBreathing()
+    },
 
     openDelayDialog() {
       this._delay.resetDelayTimer()
       this._syncDelayToData()
       this.showDelayDialog = true
     },
-    startDelayTimer() { this._delay.startDelayTimer() },
-    stopDelayTimer()  { this._delay.stopDelayTimer()  },
+    startDelayTimer() {
+      this._delay.startDelayTimer()
+    },
+    stopDelayTimer() {
+      this._delay.stopDelayTimer()
+    },
 
     openTapDialog() {
       this._tap.resetTapGame()
       this._syncTapToData()
       this.showTapGameDialog = true
     },
-    startTapGame() { this._tap.startTapGame()  },
-    stopTapGame()  { this._tap.stopTapGame()   },
-    resetTapGame() { this._tap.resetTapGame(); this._syncTapToData() },
-    registerTap()  { this._tap.registerTap();  this._syncTapToData() },
+    startTapGame() {
+      this._tap.startTapGame()
+    },
+    stopTapGame() {
+      this._tap.stopTapGame()
+    },
+    resetTapGame() {
+      this._tap.resetTapGame()
+      this._syncTapToData()
+    },
+    registerTap() {
+      this._tap.registerTap()
+      this._syncTapToData()
+    },
 
     openCommunityDialog() {
       this._community.ensureAlias()
@@ -841,17 +976,28 @@ export default {
     },
     onJoinChallenge() {
       this._community.joinChallenge(this.stats.days)
-      this.joinedChallenge       = this._community.joinedChallenge.value
+      this.joinedChallenge = this._community.joinedChallenge.value
       this.communityParticipants = this._community.communityParticipants.value
-      this.leaderboard           = [...this._community.leaderboard.value]
-      this.$q.notify({ color: 'positive', message: `You joined as "${this._community.myAlias.value}"! 🎉`, icon: 'groups', position: 'center', timeout: 2500 })
+      this.leaderboard = [...this._community.leaderboard.value]
+      this.$q.notify({
+        color: 'positive',
+        message: `You joined as "${this._community.myAlias.value}"! 🎉`,
+        icon: 'groups',
+        position: 'center',
+        timeout: 2500,
+      })
       this._saveToStorage()
     },
     onPostEncouragement() {
       const posted = this._community.postEncouragement()
       if (posted) {
         this.encouragementMessages = [...this._community.encouragementMessages.value]
-        this.$q.notify({ color: 'positive', message: 'Message posted! 🌿', icon: 'send', timeout: 1500 })
+        this.$q.notify({
+          color: 'positive',
+          message: 'Message posted! 🌿',
+          icon: 'send',
+          timeout: 1500,
+        })
       }
     },
 
@@ -870,24 +1016,36 @@ export default {
     verifyAdminPin() {
       if (this.adminPin === ADMIN_PIN) {
         this.isAdminAuthenticated = true
-        this.showAdmin            = true
-        this.showPinDialog        = false
-        this.adminPin             = ''
+        this.showAdmin = true
+        this.showPinDialog = false
+        this.adminPin = ''
         if (this.isOnline) this._loadAllUsers()
-        this.$q.notify({ color: 'positive', message: 'Admin access granted', icon: 'admin_panel_settings', position: 'center', timeout: 1500 })
+        this.$q.notify({
+          color: 'positive',
+          message: 'Admin access granted',
+          icon: 'admin_panel_settings',
+          position: 'center',
+          timeout: 1500,
+        })
       } else {
-        this.$q.notify({ color: 'negative', message: 'Incorrect PIN', icon: 'error', position: 'center', timeout: 1500 })
+        this.$q.notify({
+          color: 'negative',
+          message: 'Incorrect PIN',
+          icon: 'error',
+          position: 'center',
+          timeout: 1500,
+        })
         this.adminPin = ''
       }
     },
 
     closePinDialog() {
       this.showPinDialog = false
-      this.adminPin      = ''
+      this.adminPin = ''
     },
 
     openUserDetails(user) {
-      this.selectedUser   = user
+      this.selectedUser = user
       this.showUserDialog = true
     },
 
@@ -895,22 +1053,24 @@ export default {
       if (!this.isOnline) return
       try {
         const users = await userAPI.getAllUsers()
-        this.allUsers = users.map(u => ({
-          id:                u.device_id,
-          name:              u.name,
-          quitDate:          u.quit_date,
-          cigarettesPerDay:  u.cigarettes_per_day,
-          pricePerPack:      u.price_per_pack,
-          daysSmokeeFree:    u.days_smoke_free,
+        this.allUsers = users.map((u) => ({
+          id: u.device_id,
+          name: u.name,
+          quitDate: u.quit_date,
+          cigarettesPerDay: u.cigarettes_per_day,
+          pricePerPack: u.price_per_pack,
+          daysSmokeeFree: u.days_smoke_free,
           cigarettesAvoided: u.cigarettes_avoided,
-          moneySaved:        u.money_saved,
-          lastUpdated:       u.last_updated,
-          opensToday:        parseInt(u.opens_today)      || 0,
-          opensThisMonth:    parseInt(u.opens_this_month) || 0,
-          totalOpens:        parseInt(u.total_opens)      || 0,
-          lastAppOpen:       u.last_app_open,
+          moneySaved: u.money_saved,
+          lastUpdated: u.last_updated,
+          opensToday: parseInt(u.opens_today) || 0,
+          opensThisMonth: parseInt(u.opens_this_month) || 0,
+          totalOpens: parseInt(u.total_opens) || 0,
+          lastAppOpen: u.last_app_open,
         }))
-      } catch (error) { console.error(error) }
+      } catch (error) {
+        console.error(error)
+      }
     },
 
     async _loadDailyLogs() {
@@ -919,18 +1079,26 @@ export default {
         const logs = await userAPI.getDailyLogs(this.deviceId)
         if (Array.isArray(logs) && logs.length > 0) {
           const dbMap = {}
-          logs.forEach(l => { dbMap[l.date] = l })
-          const localOnly = this.dailyLogs.filter(l => !Object.hasOwn(dbMap, l.date))
+          logs.forEach((l) => {
+            dbMap[l.date] = l
+          })
+          const localOnly = this.dailyLogs.filter((l) => !Object.hasOwn(dbMap, l.date))
           this.dailyLogs = [
             ...localOnly,
-            ...logs.map(l => ({ date: l.date, smoked: l.smoked, smokedCount: l.smokedCount || 0 })),
+            ...logs.map((l) => ({
+              date: l.date,
+              smoked: l.smoked,
+              smokedCount: l.smokedCount || 0,
+            })),
           ]
           this._log.dailyLogs.value = this.dailyLogs
           this._log.checkTodayLog()
           this._syncLogToData()
           this._saveToStorage()
         }
-      } catch (error) { console.error(error) }
+      } catch (error) {
+        console.error(error)
+      }
     },
 
     // ════════════════════════════════════════════
@@ -939,15 +1107,29 @@ export default {
     async _syncOnOpen() {
       try {
         if (this.deviceId) await this._sync.recordAppOpen(this.deviceId)
-        if (this.deviceId && this.userName) await this._sync.syncRegistration(this.deviceId, this.userName)
+        if (this.deviceId && this.userName)
+          await this._sync.syncRegistration(this.deviceId, this.userName)
         if (this.deviceId && this.hasStarted && this.quitDate)
-          await this._sync.syncTrackingStart(this.deviceId, this.userName, this.quitDate, this.cigarettesPerDay, this.pricePerPack)
+          await this._sync.syncTrackingStart(
+            this.deviceId,
+            this.userName,
+            this.quitDate,
+            this.cigarettesPerDay,
+            this.pricePerPack,
+          )
         if (this.hasStarted && this.deviceId)
-          await this._sync.syncProgress(this.deviceId, this.stats.days, this.stats.cigarettesAvoided, this.stats.moneySaved)
+          await this._sync.syncProgress(
+            this.deviceId,
+            this.stats.days,
+            this.stats.cigarettesAvoided,
+            this.stats.moneySaved,
+          )
         if (this._sync.syncQueue.value.length > 0) await this._sync.processSyncQueue()
         if (this.showAdmin && this.isAdmin) await this._loadAllUsers()
         if (this.isOnline && this.deviceId && this.hasStarted) await this._loadDailyLogs()
-      } catch (error) { console.error(error) }
+      } catch (error) {
+        console.error(error)
+      }
     },
 
     _setupBackgroundSync() {
@@ -964,15 +1146,17 @@ export default {
     _onOnline() {
       this.isOnline = true
       if (this.hasStarted) this._recalc()
-      if (this.deviceId)   this._syncOnOpen()
+      if (this.deviceId) this._syncOnOpen()
     },
-    _onOffline() { this.isOnline = false },
+    _onOffline() {
+      this.isOnline = false
+    },
 
     _sendBeacon() {
       const payload = {
-        daysSmokeeFree:    this.stats.days,
+        daysSmokeeFree: this.stats.days,
         cigarettesAvoided: this.stats.cigarettesAvoided,
-        moneySaved:        parseFloat(this.stats.moneySaved.toFixed(2)),
+        moneySaved: parseFloat(this.stats.moneySaved.toFixed(2)),
       }
       const url = `${process.env.API_URL || 'http://localhost:3000/api'}/users/${this.deviceId}/progress`
       navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }))
@@ -981,20 +1165,20 @@ export default {
     _saveToStorage() {
       if (!this.deviceId) return
       LocalStorage.set('quit-smoking-data', {
-        deviceId:              this.deviceId,
-        userName:              this.userName,
-        quitDate:              this.quitDate,
-        cigarettesPerDay:      this.cigarettesPerDay,
-        pricePerPack:          this.pricePerPack,
-        hasStarted:            this.hasStarted,
-        stats:                 this.stats,
-        lastCalculated:        new Date().toISOString(),
-        dailyLogs:             this.dailyLogs,
-        notificationsEnabled:  this.notificationsEnabled,
-        joinedChallenge:       this.joinedChallenge,
-        myAlias:               this._community?.myAlias?.value || '',
+        deviceId: this.deviceId,
+        userName: this.userName,
+        quitDate: this.quitDate,
+        cigarettesPerDay: this.cigarettesPerDay,
+        pricePerPack: this.pricePerPack,
+        hasStarted: this.hasStarted,
+        stats: this.stats,
+        lastCalculated: new Date().toISOString(),
+        dailyLogs: this.dailyLogs,
+        notificationsEnabled: this.notificationsEnabled,
+        joinedChallenge: this.joinedChallenge,
+        myAlias: this._community?.myAlias?.value || '',
         encouragementMessages: this.encouragementMessages,
-        leaderboard:           this.leaderboard,
+        leaderboard: this.leaderboard,
       })
       LocalStorage.set('quit-smoking-sync-queue', this._sync?.syncQueue?.value || [])
     },
@@ -1002,20 +1186,23 @@ export default {
     _loadFromStorage() {
       const d = LocalStorage.getItem('quit-smoking-data')
       if (d) {
-        this.deviceId             = d.deviceId         || ''
-        this.userName             = d.userName         || ''
-        this.quitDate             = d.quitDate         || ''
-        this.cigarettesPerDay     = d.cigarettesPerDay || ''
-        this.pricePerPack         = d.pricePerPack     || ''
-        this.hasStarted           = d.hasStarted       || false
-        this.dailyLogs            = d.dailyLogs        || []
+        this.deviceId = d.deviceId || ''
+        this.userName = d.userName || ''
+        this.quitDate = d.quitDate || ''
+        this.cigarettesPerDay = d.cigarettesPerDay || ''
+        this.pricePerPack = d.pricePerPack || ''
+        this.hasStarted = d.hasStarted || false
+        this.dailyLogs = d.dailyLogs || []
         this.notificationsEnabled = d.notificationsEnabled || false
-        this.joinedChallenge      = d.joinedChallenge  || false
+        this.joinedChallenge = d.joinedChallenge || false
         if (d.encouragementMessages) this.encouragementMessages = d.encouragementMessages
-        if (d.leaderboard)           this.leaderboard           = d.leaderboard
+        if (d.leaderboard) this.leaderboard = d.leaderboard
         if (d.myAlias && this._community) this._community.myAlias.value = d.myAlias
 
-        if (this.hasStarted) { this._recalc(); this._startInterval() }
+        if (this.hasStarted) {
+          this._recalc()
+          this._startInterval()
+        }
       }
       this._sync?.loadSyncQueue()
     },
@@ -1032,12 +1219,16 @@ export default {
     },
 
     _browserFingerprint() {
-      const c   = document.createElement('canvas')
+      const c = document.createElement('canvas')
       const ctx = c.getContext('2d')
       ctx.textBaseline = 'top'
       ctx.font = '14px Arial'
       ctx.fillText('fingerprint', 2, 2)
-      return c.toDataURL().slice(-50).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)
+      return c
+        .toDataURL()
+        .slice(-50)
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 10)
     },
   },
 }
@@ -1047,19 +1238,43 @@ export default {
 /* ── Three-color theme tokens ─────────────────────────────── */
 
 /* 🌿 Light Sage Green */
-:deep(.pf-header-green) { background: linear-gradient(135deg, #7eab7e, #5d9460) !important; color: white !important; }
-:deep(.pf-badge-green)  { background: #d6efd6 !important; color: #2e4a2e !important; }
-:deep(.pf-text-green)   { color: #5d9460 !important; }
+:deep(.pf-header-green) {
+  background: linear-gradient(135deg, #7eab7e, #5d9460) !important;
+  color: white !important;
+}
+:deep(.pf-badge-green) {
+  background: #d6efd6 !important;
+  color: #2e4a2e !important;
+}
+:deep(.pf-text-green) {
+  color: #5d9460 !important;
+}
 
 /* 🍯 Honey Beige / Warm Sand */
-:deep(.pf-header-beige) { background: linear-gradient(135deg, #c8a870, #a87840) !important; color: white !important; }
-:deep(.pf-badge-beige)  { background: #ede0c4 !important; color: #5a4030 !important; }
-:deep(.pf-text-beige)   { color: #7a6040 !important; }
+:deep(.pf-header-beige) {
+  background: linear-gradient(135deg, #c8a870, #a87840) !important;
+  color: white !important;
+}
+:deep(.pf-badge-beige) {
+  background: #ede0c4 !important;
+  color: #5a4030 !important;
+}
+:deep(.pf-text-beige) {
+  color: #7a6040 !important;
+}
 
 /* 🌸 Dusty Rose */
-:deep(.pf-header-rose)  { background: linear-gradient(135deg, #c97a8a, #a85c6e) !important; color: white !important; }
-:deep(.pf-badge-rose)   { background: #fce8ee !important; color: #7a3048 !important; }
-:deep(.pf-text-rose)    { color: #c97a8a !important; }
+:deep(.pf-header-rose) {
+  background: linear-gradient(135deg, #c97a8a, #a85c6e) !important;
+  color: white !important;
+}
+:deep(.pf-badge-rose) {
+  background: #fce8ee !important;
+  color: #7a3048 !important;
+}
+:deep(.pf-text-rose) {
+  color: #c97a8a !important;
+}
 
 /* ── Page layout ─────────────────────────────────────────── */
 .pf-page-wrap {
@@ -1081,11 +1296,11 @@ export default {
 
 /* ── Dashboard header pill ───────────────────────────────── */
 .dashboard-header {
-  background: linear-gradient(135deg, rgba(255,255,255,0.70), rgba(255,255,255,0.50));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.5));
   border-radius: 18px;
-  border: 1.5px solid rgba(184, 212, 176, 0.60);
+  border: 1.5px solid rgba(184, 212, 176, 0.6);
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
 }
 
 /* ── Bottom Navigation Bar ───────────────────────────────── */
@@ -1100,7 +1315,7 @@ export default {
   background: rgba(255, 253, 248, 0.96);
   backdrop-filter: blur(16px);
   border-top: 1.5px solid #d4c4a0;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   z-index: 100;
   padding: 0 4px;
   padding-bottom: env(safe-area-inset-bottom, 0px); /* iPhone notch support */

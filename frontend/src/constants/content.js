@@ -38,21 +38,21 @@ export const MOTIVATIONAL_QUOTES = [
 ]
 
 export const HEALTH_MILESTONES = [
-  { time: '20 minutes',   benefit: 'Heart rate and blood pressure begin to drop.' },
-  { time: '8–12 hours',   benefit: 'Carbon monoxide levels decrease.' },
-  { time: '24 hours',     benefit: 'Oxygen levels improve.' },
-  { time: '48 hours',     benefit: 'Nerve endings begin to recover.' },
-  { time: '72 hours',     benefit: 'Breathing becomes easier.' },
-  { time: '1 week',       benefit: 'Lung irritation starts to reduce.' },
-  { time: '2 weeks',      benefit: 'Circulation improves.' },
-  { time: '1 month',      benefit: 'Coughing and fatigue decrease.' },
-  { time: '2–3 months',   benefit: 'Lung function improves.' },
-  { time: '3–6 months',   benefit: 'Immune function strengthens.' },
-  { time: '6 months',     benefit: 'Reduced respiratory infections.' },
-  { time: '1 year',       benefit: 'Heart disease risk drops significantly.' },
-  { time: '2–5 years',    benefit: 'Stroke risk decreases.' },
-  { time: '5–10 years',   benefit: 'Cancer risk declines.' },
-  { time: 'Long-term',    benefit: 'Improved quality of life.' },
+  { time: '20 minutes', benefit: 'Heart rate and blood pressure begin to drop.' },
+  { time: '8–12 hours', benefit: 'Carbon monoxide levels decrease.' },
+  { time: '24 hours', benefit: 'Oxygen levels improve.' },
+  { time: '48 hours', benefit: 'Nerve endings begin to recover.' },
+  { time: '72 hours', benefit: 'Breathing becomes easier.' },
+  { time: '1 week', benefit: 'Lung irritation starts to reduce.' },
+  { time: '2 weeks', benefit: 'Circulation improves.' },
+  { time: '1 month', benefit: 'Coughing and fatigue decrease.' },
+  { time: '2–3 months', benefit: 'Lung function improves.' },
+  { time: '3–6 months', benefit: 'Immune function strengthens.' },
+  { time: '6 months', benefit: 'Reduced respiratory infections.' },
+  { time: '1 year', benefit: 'Heart disease risk drops significantly.' },
+  { time: '2–5 years', benefit: 'Stroke risk decreases.' },
+  { time: '5–10 years', benefit: 'Cancer risk declines.' },
+  { time: 'Long-term', benefit: 'Improved quality of life.' },
 ]
 
 export const EDUCATIONAL_TIPS = [
@@ -109,10 +109,55 @@ export const HEALTH_BENEFITS = [
 ]
 
 export const DISEASE_RISK_MILESTONES = [
-  { label: '1 Year — Heart Disease Risk ↓',     benefit: 'Your heart disease risk drops by 50% after one year.',           target: 365  },
-  { label: '5 Years — Stroke Risk Decreases',   benefit: 'Stroke risk falls to near that of a non-smoker.',                target: 1825 },
-  { label: '10 Years — Lung Cancer Risk ↓ 50%', benefit: 'Lung cancer risk is cut in half after 10 smoke-free years.',     target: 3650 },
-  { label: '15 Years — Heart Risk = Non-Smoker', benefit: "Your heart disease risk equals that of someone who never smoked.", target: 5475 },
+  {
+    label: '1 Year — Heart Disease Risk ↓',
+    benefit: 'Your heart disease risk drops by 50% after one year.',
+    target: 365,
+  },
+  {
+    label: '5 Years — Stroke Risk Decreases',
+    benefit: 'Stroke risk falls to near that of a non-smoker.',
+    target: 1825,
+  },
+  {
+    label: '10 Years — Lung Cancer Risk ↓ 50%',
+    benefit: 'Lung cancer risk is cut in half after 10 smoke-free years.',
+    target: 3650,
+  },
+  {
+    label: '15 Years — Heart Risk = Non-Smoker',
+    benefit: 'Your heart disease risk equals that of someone who never smoked.',
+    target: 5475,
+  },
 ]
 
-export const ADMIN_PIN = '1234'
+export const WITHDRAWAL_SUPPORT = {
+  symptoms: [
+    'Irritability and mood changes',
+    'Anxiety or restlessness',
+    'Low mood or mild depression',
+    'Difficulty concentrating',
+    'Sleep problems or insomnia',
+    'Increased appetite',
+    'Strong nicotine cravings',
+  ],
+  coping: [
+    'Use deep breathing or the breathing exercise in this app',
+    'Delay cravings using the 5-minute delay timer',
+    'Drink plenty of water to reduce oral cravings',
+    'Stay busy with healthy distractions (walk, music, reading)',
+    'Avoid personal smoking triggers (stress, boredom, social cues)',
+  ],
+  helpContacts: [
+    'DOH Quitline — call 1558',
+    'Visit your local Rural Health Unit',
+    'Seek help from the JRMSU school clinic',
+  ],
+  whenToSeekHelp: [
+    'Symptoms become severe or overwhelming',
+    'Withdrawal is difficult to manage alone',
+    'Contact the researcher or a health professional immediately',
+  ],
+}
+
+export const ADMIN_PIN = 'naifaharain'

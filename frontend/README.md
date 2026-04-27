@@ -1,6 +1,6 @@
-# Puff Proof (quit-smoking)
+# HingaPH (quit-smoking)
 
-Puff Proof
+HingaPH
 
 ## Install the dependencies
 
