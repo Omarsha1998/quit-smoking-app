@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HingaPH - Download</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        background: linear-gradient(
+          160deg,
+          #e8f4e8 0%,
+          #fdf9f0 50%,
+          #f5ead8 100%
+        );
+        font-family: "Segoe UI", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .card {
+        background: white;
+        border-radius: 28px;
+        box-shadow: 0 20px 60px rgba(93, 148, 96, 0.18);
+        border: 1.5px solid #d4e8d0;
+        max-width: 420px;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      /* ── Hero ── */
+      .hero {
+        background: linear-gradient(
+          160deg,
+          #f0f7f0 0%,
+          #e8f4e8 60%,
+          #fdf9f0 100%
+        );
+        padding: 48px 32px 32px;
+        text-align: center;
+        border-bottom: 1px solid #ede8dc;
+      }
+
+      .logo {
+        width: 160px;
+        height: auto;
+        margin: 0 auto 8px;
+        display: block;
+      }
+
+      .partner-logos {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .partner-logo {
+        width: 44px;
+        height: auto;
+      }
+
+      .divider {
+        width: 48px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #b8d4b0, transparent);
+        margin: 16px auto;
+        border-radius: 2px;
+      }
+
+      /* ── App info ── */
+      .info {
+        padding: 28px 32px 8px;
+        text-align: center;
+        background: #fdf5e8;
+      }
+
+      .app-name {
+        font-size: 2rem;
+        font-weight: 900;
+        color: #2e4a2e;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+      }
+
+      .app-name span {
+        color: #5d9460;
+      }
+
+      .app-tagline {
+        font-size: 0.9rem;
+        color: #7a8c7a;
+        margin-top: 6px;
+      }
+
+      .app-meta {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        background: #e8f4e8;
+        color: #5d9460;
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid #c8ddc8;
+        letter-spacing: 0.3px;
+      }
+
+      /* ── File info ── */
+      .file-box {
+        margin: 20px 32px 0;
+        background: #f5f0e8;
+        border: 1.5px solid #e0d5c0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .file-icon {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .file-details {
+        text-align: left;
+      }
+
+      .file-name {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #2e4a2e;
+      }
+
+      .file-type {
+        font-size: 0.75rem;
+        color: #9aaa90;
+        margin-top: 2px;
+      }
+
+      /* ── Download button ── */
+      .download-section {
+        padding: 24px 32px 32px;
+        background: #f5ead8;
+      }
+
+      .download-btn {
+        display: block;
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #5d9460 0%, #7eab7e 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 14px;
+        font-size: 1rem;
+        font-weight: 700;
+        text-align: center;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 16px rgba(93, 148, 96, 0.35);
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+      }
+
+      .download-btn:hover {
+        box-shadow: 0 6px 24px rgba(93, 148, 96, 0.45);
+        transform: translateY(-2px);
+      }
+
+      .download-btn:active {
+        transform: translateY(0);
+      }
+
+      .install-note {
+        font-size: 0.72rem;
+        color: #a0b0a0;
+        text-align: center;
+        margin-top: 12px;
+        line-height: 1.5;
+      }
+
+      .install-note a {
+        color: #5d9460;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      /* ── Steps ── */
+      .steps {
+        padding: 0 32px 28px;
+        background: #f5ead8;
+      }
+
+      .steps-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #5d9460;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .step-num {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        background: #5d9460;
+        color: white;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+      }
+
+      .step-text {
+        font-size: 0.8rem;
+        color: #5a4a3a;
+        line-height: 1.5;
+      }
+
+      .step-text strong {
+        color: #2e4a2e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <!-- Hero -->
+      <div class="hero">
+        <img src="HingaPhWithLogo.png" alt="HingaPH Logo" class="logo" />
+        <div class="divider"></div>
+        <div class="partner-logos">
+          <img src="ateneologo.png" alt="Ateneo Logo" class="partner-logo" />
+          <img
+            src="ateneosmlogo.png"
+            alt="Ateneo SM Logo"
+            class="partner-logo"
+          />
+        </div>
+      </div>
+
+      <!-- App info -->
+      <div class="info">
+        <div class="app-name">Hinga<span>PH</span></div>
+        <div class="app-tagline">Your Breath. Your Health.</div>
+        <div class="app-meta">
+          <span class="badge">📱 Android</span>
+          <span class="badge">🌿 Smoke-Free Tracker</span>
+          <span class="badge">🆓 Free</span>
+        </div>
+      </div>
+
+      <!-- File info -->
+      <div class="file-box" style="background: #f5ead8; border-color: #f5ead8">
+        <div class="file-icon">📦</div>
+        <div class="file-details">
+          <div class="file-name">HingaPh.apk</div>
+          <div class="file-type">Android Package · Latest Version</div>
+        </div>
+      </div>
+
+      <!-- Download -->
+      <div class="download-section">
+        <a href="HingaPh.apk" download="HingaPh.apk" class="download-btn">
+          ⬇️ &nbsp; Install HingaPH
+        </a>
+        <div class="install-note">
+          After downloading, tap the file and allow<br />
+          <strong>Install from unknown sources</strong> if prompted.
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <div class="steps">
+        <div class="steps-title">How to Install</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            Tap <strong>Install HingaPH</strong> above to download the APK
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            Open your <strong>Downloads</strong> folder and tap the file
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            If asked, enable <strong>Install unknown apps</strong> in Settings
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-text">
+            Tap <strong>Install</strong> and open HingaPH 🌿
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
