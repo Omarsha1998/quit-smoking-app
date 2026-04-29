@@ -2,24 +2,34 @@
   <div class="row justify-center items-center" style="min-height: 80vh">
     <div class="col-12 col-md-6">
       <q-card class="shadow-xl animate-fade-in registration-card">
-
         <!-- Logos -->
-        <q-card-section class="text-center q-pt-xl q-pb-md">
-          <div class="row justify-center items-center q-gutter-lg">
-            <div class="col-auto"><img src="../assets/adzuLogo-nobg.png" alt="AdZU Logo" class="logo-image" /></div>
-            <div class="col-auto logo-divider"></div>
-            <div class="col-auto"><img src="../assets/puffLogo-removebg-preview.png" alt="App Logo" class="logo-image" /></div>
+        <q-card-section class="text-center q-pt-xl q-pb-none">
+          <!-- Main logo -->
+          <div class="row justify-center q-mb-sm">
+            <div style="width: 180px">
+              <q-img src="../assets/HingaPhWithLogo.png" alt="Hinga PH Logo" />
+            </div>
+          </div>
+
+          <!-- Two logos side by side -->
+          <div class="row justify-center items-center q-gutter-md">
+            <div style="width: 80px">
+              <q-img src="../assets/ateneologo.png" alt="Ateneo Logo" />
+            </div>
+            <div style="width: 80px">
+              <q-img src="../assets/ateneosmlogo.png" alt="Ateneo SM Logo" />
+            </div>
           </div>
         </q-card-section>
 
         <!-- Welcome text -->
-        <q-card-section class="text-center q-px-lg q-pb-md" style="background: #fdf5e8;">
+        <q-card-section class="text-center q-px-lg q-pb-md" style="background: #fdf5e8">
           <div class="text-h3 text-weight-bold q-mb-sm welcome-text">Welcome</div>
           <div class="text-subtitle1 tagline-text">Begin your journey to a smoke-free life</div>
         </q-card-section>
 
         <!-- Input & CTA -->
-        <q-card-section class="q-px-lg q-pb-lg" style="background: #f5ead8;">
+        <q-card-section class="q-px-lg q-pb-lg" style="background: #f5ead8">
           <q-input
             v-model="localName"
             label="Your Name"
@@ -29,7 +39,7 @@
             @keyup.enter="submit"
           >
             <template v-slot:prepend>
-              <q-icon name="person" style="color: #7eab7e;" />
+              <q-icon name="person" style="color: #7eab7e" />
             </template>
           </q-input>
 
@@ -43,7 +53,6 @@
             no-caps
           />
         </q-card-section>
-
       </q-card>
     </div>
   </div>

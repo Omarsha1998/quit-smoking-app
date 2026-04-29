@@ -14,12 +14,7 @@
         <!-- Form — Honey Beige -->
         <q-card-section class="q-pa-lg setup-body">
           <div class="field-label">📅 When did you quit?</div>
-          <q-input
-            v-model="form.quitDate"
-            type="datetime-local"
-            outlined
-            class="q-mb-md input-modern"
-          />
+          <q-input v-model="form.quitDate" type="date" outlined class="q-mb-md input-modern" />
 
           <div class="field-label">🚬 Cigarettes per day (before quitting)</div>
           <q-input
@@ -76,11 +71,9 @@ export default {
       const { quitDate, cigarettesPerDay, pricePerPack } = this.form
       if (!quitDate || !cigarettesPerDay || !pricePerPack) return
 
-      // datetime-local returns "2026-04-27T08:00" — server needs "2026-04-27"
-      const normalizedQuitDate = quitDate.split('T')[0]
-
+      // type="date" already returns "YYYY-MM-DD" — no splitting needed
       this.$emit('start', {
-        quitDate: normalizedQuitDate,
+        quitDate,
         cigarettesPerDay,
         pricePerPack,
       })
