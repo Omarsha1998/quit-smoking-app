@@ -3,36 +3,82 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HingaPH - Download</title>
+    <title>HingaPH — Download</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      * {
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        box-sizing: border-box;
       }
 
+      :root {
+        --green-dark: #2e4a2e;
+        --green-mid: #5d9460;
+        --green-light: #7eab7e;
+        --green-pale: #e8f4e8;
+        --beige-dark: #c8a870;
+        --beige-mid: #f5ead8;
+        --beige-light: #fdf5e8;
+        --beige-border: #e0d0b8;
+        --text-dark: #1e321e;
+        --text-mid: #5a6e5a;
+        --text-soft: #9aaa90;
+      }
+
+      html,
       body {
-        min-height: 100vh;
-        background: linear-gradient(
-          160deg,
-          #e8f4e8 0%,
-          #fdf9f0 50%,
-          #f5ead8 100%
-        );
-        font-family: "Segoe UI", sans-serif;
+        min-height: 100%;
+        background: #f0ece4;
+        font-family: "DM Sans", sans-serif;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
+        padding: 32px 16px;
       }
 
-      .card {
-        background: white;
-        border-radius: 28px;
-        box-shadow: 0 20px 60px rgba(93, 148, 96, 0.18);
-        border: 1.5px solid #d4e8d0;
-        max-width: 420px;
+      /* ── Background texture ── */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 80% 60% at 20% 10%,
+            rgba(126, 171, 126, 0.13) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 60% 80% at 80% 90%,
+            rgba(200, 168, 112, 0.1) 0%,
+            transparent 60%
+          ),
+          linear-gradient(160deg, #eef5ee 0%, #f5ead8 50%, #fdf5e8 100%);
+        z-index: 0;
+      }
+
+      .page-wrap {
+        position: relative;
+        z-index: 1;
         width: 100%;
+        max-width: 400px;
+      }
+
+      /* ── Card ── */
+      .card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-radius: 32px;
+        border: 1.5px solid rgba(184, 212, 176, 0.5);
+        box-shadow:
+          0 2px 0 rgba(255, 255, 255, 0.8) inset,
+          0 24px 64px rgba(46, 74, 46, 0.14),
+          0 4px 16px rgba(46, 74, 46, 0.06);
         overflow: hidden;
       }
 
@@ -40,146 +86,250 @@
       .hero {
         background: linear-gradient(
           160deg,
-          #f0f7f0 0%,
-          #e8f4e8 60%,
-          #fdf9f0 100%
+          #f2f8f2 0%,
+          #e4f0e4 40%,
+          #f8f2ea 100%
         );
-        padding: 48px 32px 32px;
+        padding: 44px 32px 32px;
         text-align: center;
-        border-bottom: 1px solid #ede8dc;
+        position: relative;
+        border-bottom: 1px solid rgba(184, 212, 176, 0.3);
       }
 
-      .logo {
-        width: 160px;
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(126, 171, 126, 0.12),
+          transparent 70%
+        );
+        pointer-events: none;
+      }
+
+      .main-logo {
+        width: 180px;
         height: auto;
-        margin: 0 auto 8px;
         display: block;
-      }
-
-      .partner-logos {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 12px;
-        margin-top: 16px;
-      }
-
-      .partner-logo {
-        width: 44px;
-        height: auto;
+        margin: 0 auto 20px;
+        filter: drop-shadow(0 4px 12px rgba(46, 74, 46, 0.12));
       }
 
       .divider {
-        width: 48px;
+        width: 40px;
         height: 2px;
         background: linear-gradient(90deg, transparent, #b8d4b0, transparent);
-        margin: 16px auto;
+        margin: 0 auto 20px;
         border-radius: 2px;
       }
 
-      /* ── App info ── */
-      .info {
-        padding: 28px 32px 8px;
+      .partner-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .partner-logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 50%;
+        border: 2px solid rgba(184, 212, 176, 0.4);
+        background: white;
+        padding: 3px;
+        box-shadow: 0 2px 8px rgba(46, 74, 46, 0.08);
+      }
+
+      .partner-name {
+        font-size: 0.68rem;
+        color: var(--text-soft);
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        margin-top: 10px;
+        text-transform: uppercase;
+      }
+
+      /* ── App identity ── */
+      .identity {
+        padding: 28px 32px 24px;
         text-align: center;
-        background: #fdf5e8;
+        background: var(--beige-light);
+        border-bottom: 1px solid var(--beige-border);
       }
 
       .app-name {
-        font-size: 2rem;
+        font-family: "Nunito", sans-serif;
+        font-size: 2.6rem;
         font-weight: 900;
-        color: #2e4a2e;
-        letter-spacing: -0.5px;
-        line-height: 1.1;
-      }
-
-      .app-name span {
-        color: #5d9460;
-      }
-
-      .app-tagline {
-        font-size: 0.9rem;
-        color: #7a8c7a;
-        margin-top: 6px;
-      }
-
-      .app-meta {
-        display: flex;
-        justify-content: center;
-        gap: 16px;
-        margin-top: 16px;
-        flex-wrap: wrap;
-      }
-
-      .badge {
-        background: #e8f4e8;
-        color: #5d9460;
-        font-size: 0.72rem;
-        font-weight: 600;
-        padding: 4px 12px;
-        border-radius: 20px;
-        border: 1px solid #c8ddc8;
-        letter-spacing: 0.3px;
-      }
-
-      /* ── File info ── */
-      .file-box {
-        margin: 20px 32px 0;
-        background: #f5f0e8;
-        border: 1.5px solid #e0d5c0;
-        border-radius: 14px;
-        padding: 14px 18px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .file-icon {
-        font-size: 2rem;
+        color: var(--green-dark);
+        letter-spacing: -1px;
         line-height: 1;
       }
 
-      .file-details {
+      .app-name em {
+        font-style: normal;
+        color: var(--green-mid);
+      }
+
+      .app-tagline {
+        font-size: 0.88rem;
+        color: var(--text-mid);
+        margin-top: 6px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+      }
+
+      .badges {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+      }
+
+      .badge-green {
+        background: var(--green-pale);
+        color: var(--green-mid);
+        border: 1.5px solid #c8ddc8;
+      }
+
+      .badge-beige {
+        background: #f0e4cc;
+        color: #8a6830;
+        border: 1.5px solid #ddc8a0;
+      }
+
+      /* ── File row ── */
+      .file-row {
+        margin: 0 24px;
+        background: #f8f2e8;
+        border: 1.5px solid var(--beige-border);
+        border-radius: 16px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 20px;
+      }
+
+      .file-icon-wrap {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #5d9460, #7eab7e);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(93, 148, 96, 0.3);
+      }
+
+      .file-info {
         text-align: left;
       }
 
       .file-name {
         font-size: 0.9rem;
         font-weight: 700;
-        color: #2e4a2e;
+        color: var(--text-dark);
+        font-family: "Nunito", sans-serif;
       }
 
-      .file-type {
-        font-size: 0.75rem;
-        color: #9aaa90;
+      .file-meta {
+        font-size: 0.72rem;
+        color: var(--text-soft);
         margin-top: 2px;
       }
 
-      /* ── Download button ── */
+      .file-size {
+        margin-left: auto;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--green-mid);
+        background: var(--green-pale);
+        padding: 4px 10px;
+        border-radius: 10px;
+        border: 1px solid #c8ddc8;
+        white-space: nowrap;
+      }
+
+      /* ── Download section ── */
       .download-section {
-        padding: 24px 32px 32px;
-        background: #f5ead8;
+        padding: 20px 24px 28px;
+        background: var(--beige-mid);
       }
 
       .download-btn {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
         width: 100%;
-        padding: 16px;
-        background: linear-gradient(135deg, #5d9460 0%, #7eab7e 100%);
+        padding: 17px 24px;
+        background: linear-gradient(
+          135deg,
+          #3d7840 0%,
+          #5d9460 50%,
+          #7eab7e 100%
+        );
         color: white;
         text-decoration: none;
-        border-radius: 14px;
-        font-size: 1rem;
-        font-weight: 700;
-        text-align: center;
-        letter-spacing: 0.3px;
-        box-shadow: 0 4px 16px rgba(93, 148, 96, 0.35);
+        border-radius: 16px;
+        font-family: "Nunito", sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.2) inset,
+          0 6px 20px rgba(61, 120, 64, 0.4);
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .download-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.12),
+          transparent
+        );
+        transform: skewX(-20deg);
+        transition: left 0.5s ease;
+      }
+
+      .download-btn:hover::before {
+        left: 160%;
       }
 
       .download-btn:hover {
-        box-shadow: 0 6px 24px rgba(93, 148, 96, 0.45);
+        box-shadow: 0 8px 28px rgba(61, 120, 64, 0.5);
         transform: translateY(-2px);
       }
 
@@ -187,141 +337,224 @@
         transform: translateY(0);
       }
 
-      .install-note {
-        font-size: 0.72rem;
-        color: #a0b0a0;
-        text-align: center;
-        margin-top: 12px;
-        line-height: 1.5;
+      .btn-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
       }
 
-      .install-note a {
-        color: #5d9460;
-        text-decoration: none;
-        font-weight: 600;
+      .install-note {
+        font-size: 0.73rem;
+        color: var(--text-soft);
+        text-align: center;
+        margin-top: 12px;
+        line-height: 1.6;
+      }
+
+      .install-note strong {
+        color: var(--green-mid);
+        font-weight: 700;
       }
 
       /* ── Steps ── */
-      .steps {
-        padding: 0 32px 28px;
-        background: #f5ead8;
+      .steps-section {
+        padding: 0 24px 32px;
+        background: var(--beige-mid);
       }
 
-      .steps-title {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #5d9460;
+      .steps-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-top: 4px;
+      }
+
+      .steps-line {
+        flex: 1;
+        height: 1px;
+        background: var(--beige-border);
+      }
+
+      .steps-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--green-mid);
         text-transform: uppercase;
-        letter-spacing: 0.6px;
-        margin-bottom: 12px;
-        text-align: center;
+        letter-spacing: 1px;
+        white-space: nowrap;
       }
 
       .step {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .step:last-child {
+        margin-bottom: 0;
       }
 
       .step-num {
-        width: 22px;
-        height: 22px;
-        min-width: 22px;
-        background: #5d9460;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        background: linear-gradient(
+          135deg,
+          var(--green-mid),
+          var(--green-light)
+        );
         color: white;
-        border-radius: 50%;
-        font-size: 0.7rem;
-        font-weight: 700;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 800;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 6px rgba(93, 148, 96, 0.3);
         margin-top: 1px;
+        font-family: "Nunito", sans-serif;
       }
 
       .step-text {
-        font-size: 0.8rem;
+        font-size: 0.82rem;
         color: #5a4a3a;
-        line-height: 1.5;
+        line-height: 1.55;
       }
 
       .step-text strong {
-        color: #2e4a2e;
+        color: var(--text-dark);
+        font-weight: 700;
+      }
+
+      /* ── Footer ── */
+      .footer {
+        padding: 16px 24px;
+        background: rgba(255, 255, 255, 0.4);
+        border-top: 1px solid rgba(184, 212, 176, 0.3);
+        text-align: center;
+      }
+
+      .footer-text {
+        font-size: 0.68rem;
+        color: var(--text-soft);
+        letter-spacing: 0.3px;
+      }
+
+      .footer-text span {
+        color: var(--green-mid);
+        font-weight: 700;
       }
     </style>
   </head>
   <body>
-    <div class="card">
-      <!-- Hero -->
-      <div class="hero">
-        <img src="HingaPhWithLogo.png" alt="HingaPH Logo" class="logo" />
-        <div class="divider"></div>
-        <div class="partner-logos">
-          <img src="ateneologo.png" alt="Ateneo Logo" class="partner-logo" />
+    <div class="page-wrap">
+      <div class="card">
+        <!-- Hero -->
+        <div class="hero">
           <img
-            src="ateneosmlogo.png"
-            alt="Ateneo SM Logo"
-            class="partner-logo"
+            src="HingaPhWithLogo.png"
+            alt="HingaPH Logo"
+            class="main-logo"
+            onerror="this.style.display = 'none'"
           />
+          <div class="divider"></div>
+          <div class="partner-row">
+            <img
+              src="ateneologo.png"
+              alt="Ateneo de Zamboanga"
+              class="partner-logo"
+              onerror="this.style.display = 'none'"
+            />
+            <img
+              src="ateneosmlogo.png"
+              alt="Ateneo School of Medicine"
+              class="partner-logo"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="partner-name">Ateneo de Zamboanga University</div>
         </div>
-      </div>
 
-      <!-- App info -->
-      <div class="info">
-        <div class="app-name">Hinga<span>PH</span></div>
-        <div class="app-tagline">Your Breath. Your Health.</div>
-        <div class="app-meta">
-          <span class="badge">📱 Android</span>
-          <span class="badge">🌿 Smoke-Free Tracker</span>
-          <span class="badge">🆓 Free</span>
-        </div>
-      </div>
-
-      <!-- File info -->
-      <div class="file-box" style="background: #f5ead8; border-color: #f5ead8">
-        <div class="file-icon">📦</div>
-        <div class="file-details">
-          <div class="file-name">HingaPh.apk</div>
-          <div class="file-type">Android Package · Latest Version</div>
-        </div>
-      </div>
-
-      <!-- Download -->
-      <div class="download-section">
-        <a href="HingaPh.apk" download="HingaPh.apk" class="download-btn">
-          ⬇️ &nbsp; Install HingaPH
-        </a>
-        <div class="install-note">
-          After downloading, tap the file and allow<br />
-          <strong>Install from unknown sources</strong> if prompted.
-        </div>
-      </div>
-
-      <!-- Steps -->
-      <div class="steps">
-        <div class="steps-title">How to Install</div>
-        <div class="step">
-          <div class="step-num">1</div>
-          <div class="step-text">
-            Tap <strong>Install HingaPH</strong> above to download the APK
+        <!-- Identity -->
+        <div class="identity">
+          <div class="app-name">Hinga<em>PH</em></div>
+          <div class="app-tagline">Your Breath. Your Health.</div>
+          <div class="badges">
+            <span class="badge badge-green">📱 Android</span>
+            <span class="badge badge-green">🌿 Smoke-Free Tracker</span>
+            <span class="badge badge-beige">🆓 Free</span>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div class="step-text">
-            Open your <strong>Downloads</strong> folder and tap the file
+
+        <!-- File row -->
+        <div class="file-row">
+          <div class="file-icon-wrap">📦</div>
+          <div class="file-info">
+            <div class="file-name">HingaPh.apk</div>
+            <div class="file-meta">Android Package · Latest Version</div>
+          </div>
+          <div class="file-size">~5.5 MB</div>
+        </div>
+
+        <!-- Download -->
+        <div class="download-section" style="margin-top: 0; padding-top: 20px">
+          <a href="HingaPh.apk" download="HingaPh.apk" class="download-btn">
+            <div class="btn-icon">⬇️</div>
+            Install HingaPH
+          </a>
+          <div class="install-note">
+            After downloading, tap the file and allow<br />
+            <strong>Install from unknown sources</strong> if prompted.
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-text">
-            If asked, enable <strong>Install unknown apps</strong> in Settings
+
+        <!-- Steps -->
+        <div class="steps-section">
+          <div class="steps-header">
+            <div class="steps-line"></div>
+            <div class="steps-label">How to Install</div>
+            <div class="steps-line"></div>
+          </div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              Tap <strong>Install HingaPH</strong> above to download the APK
+              file
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              Open your <strong>Downloads</strong> folder and tap the file
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              If prompted, enable <strong>Install unknown apps</strong> in
+              Settings
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">
+              Tap <strong>Install</strong> and open HingaPH 🌿
+            </div>
           </div>
         </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div class="step-text">
-            Tap <strong>Install</strong> and open HingaPH 🌿
+
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-text">
+            <span>HingaPH</span> · Ateneo de Zamboanga University · 2026
           </div>
         </div>
       </div>
