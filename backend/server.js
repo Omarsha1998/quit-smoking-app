@@ -42,6 +42,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "10kb" }));
+app.use(express.static("public"));
 
 // Global — generous ceiling, just blocks abuse
 const globalLimiter = rateLimit({
