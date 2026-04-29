@@ -7,6 +7,7 @@ const { runMigrations } = require("./migration");
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 const allowedOrigins = [
+  "https://quit-smoking-api-zr94.onrender.com",
   "https://puff-proof.onrender.com",
   "http://localhost:9000",
 ];
