@@ -154,6 +154,28 @@ const runMigrations = async (pool) => {
           CHECK (smoked_count >= 0 AND smoked_count <= 1000);
       `,
     },
+
+    // ── Convert quit_date from TIMESTAMP to DATE ───────────────────────────────
+    {
+      name: "convert_quit_date_to_date",
+      sql: `
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name  = 'users'
+              AND column_name = 'quit_date'
+              AND data_type   = 'timestamp without time zone'
+          ) THEN
+            ALTER TABLE users
+              ALTER COLUMN quit_date TYPE DATE
+              USING quit_date::DATE;
+          END IF;
+        END
+        $$;
+      `,
+    },
   ];
 
   for (const { name, sql } of migrations) {
