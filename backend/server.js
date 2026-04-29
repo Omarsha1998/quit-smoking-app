@@ -25,15 +25,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
 
+// server.js - replace your entire cors block with this
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: true, // ← allows EVERY origin, just like Facebook's API
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
