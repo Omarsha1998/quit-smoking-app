@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: true, // ← allows EVERY origin, just like Facebook's API
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
