@@ -1,6 +1,5 @@
 <template>
   <div class="reward-card">
-
     <!-- Header -->
     <div class="reward-header">
       <div class="reward-title-row">
@@ -18,8 +17,8 @@
         class="reward-box"
         :class="{
           'reward-unlocked': isUnlocked(reward),
-          'reward-locked':   !isUnlocked(reward),
-          'reward-new':      isNew(reward),
+          'reward-locked': !isUnlocked(reward),
+          'reward-new': isNew(reward),
         }"
         @click="openReward(reward)"
       >
@@ -47,7 +46,9 @@
     <div v-if="showDialog" class="reward-overlay" @click.self="closeDialog">
       <div class="reward-dialog" :class="{ 'dialog-enter': showDialog }">
         <div class="dialog-confetti">
-          <span v-for="i in 8" :key="i" class="confetti-piece" :style="confettiStyle(i)">{{ confettiEmojis[i % confettiEmojis.length] }}</span>
+          <span v-for="i in 8" :key="i" class="confetti-piece" :style="confettiStyle(i)">{{
+            confettiEmojis[i % confettiEmojis.length]
+          }}</span>
         </div>
         <div class="dialog-icon">{{ activeReward.icon }}</div>
         <div class="dialog-type">{{ activeReward.type }}</div>
@@ -59,10 +60,13 @@
 
     <!-- Next unlock teaser -->
     <div v-if="nextReward" class="next-unlock">
-      <span>🔓 Next unlock in {{ nextReward.requiredDays - smokeDays }} day{{ nextReward.requiredDays - smokeDays !== 1 ? 's' : '' }}</span>
+      <span
+        >🔓 Next unlock in {{ nextReward.requiredDays - smokeDays }} day{{
+          nextReward.requiredDays - smokeDays !== 1 ? 's' : ''
+        }}</span
+      >
       <span class="next-unlock-name">{{ nextReward.title }}</span>
     </div>
-
   </div>
 </template>
 
@@ -77,49 +81,82 @@ export default {
   data() {
     return {
       openedRewards: [],
-      showDialog:    false,
-      activeReward:  null,
+      showDialog: false,
+      activeReward: null,
       confettiEmojis: ['🎉', '⭐', '💚', '🌿', '✨', '🎊'],
 
       rewards: [
         {
-          id: 1, requiredDays: 1, icon: '💬', type: 'Quote',
+          id: 1,
+          requiredDays: 1,
+          icon: '💬',
+          type: 'Quote',
           title: 'Your First Step',
-          content: '"The secret of getting ahead is getting started." Every journey begins with a single day. You did it! 🌱',
+          content:
+            '"The secret of getting ahead is getting started." Every journey begins with a single day. You did it! 🌱',
         },
         {
-          id: 2, requiredDays: 3, icon: '🌿', type: 'Self-Care Idea',
-          title: '3-Day Warrior',
-          content: 'Treat yourself today! Take a long warm shower, light a candle, and breathe in — your lungs are already healing. You deserve this moment. 🛁',
+          id: 2,
+          requiredDays: 2,
+          icon: '🌿',
+          type: 'Self-Care Idea',
+          title: '2-Day Warrior',
+          content:
+            'Treat yourself today! Take a long warm shower, light a candle, and breathe in — your lungs are already healing. You deserve this moment. 🛁',
         },
         {
-          id: 3, requiredDays: 7, icon: '⭐', type: 'Milestone Message',
-          title: 'One Week Champion!',
-          content: 'ONE WEEK! Your circulation has improved, your lung function is getting better. Science says cravings are now getting weaker. You are WINNING! 🏆',
+          id: 3,
+          requiredDays: 3,
+          icon: '⭐',
+          type: 'Milestone Message',
+          title: '3-Day Champion!',
+          content:
+            'THREE DAYS! The nicotine is completely out of your body. Your circulation is improving and your lung function is getting better. You are WINNING! 🏆',
         },
         {
-          id: 4, requiredDays: 10, icon: '🎵', type: 'Self-Care Idea',
-          title: '10-Day Reward',
-          content: 'Create your "Smoke-Free Playlist" — songs that make you feel alive and free. Music is a powerful craving buster. What song defines your journey?  🎶',
+          id: 4,
+          requiredDays: 5,
+          icon: '🎵',
+          type: 'Self-Care Idea',
+          title: '5-Day Reward',
+          content:
+            'Create your "Smoke-Free Playlist" — songs that make you feel alive and free. Music is a powerful craving buster. What song defines your journey? 🎶',
         },
         {
-          id: 5, requiredDays: 14, icon: '💌', type: 'Inspirational Message',
-          title: 'Two Week Hero',
-          content: 'Two weeks ago you made a decision that will add years to your life. Every morning you wake up, you are living proof that change is possible. Keep shining. 💚',
+          id: 5,
+          requiredDays: 7,
+          icon: '💌',
+          type: 'Inspirational Message',
+          title: 'One Week Hero',
+          content:
+            'ONE WEEK! Seven days ago you made a decision that will add years to your life. Every morning you wake up, you are living proof that change is possible. Keep shining. 💚',
         },
         {
-          id: 6, requiredDays: 21, icon: '🧘', type: 'Self-Care Idea',
-          title: '21-Day Habit Formed!',
-          content: 'They say it takes 21 days to form a habit. Today, being smoke-free IS your habit. Celebrate with 10 minutes of meditation — you have earned the peace. 🕊️',
+          id: 6,
+          requiredDays: 9,
+          icon: '🧘',
+          type: 'Self-Care Idea',
+          title: '9-Day Zen',
+          content:
+            'You are 9 days in and your body is loving you for it. Celebrate with 10 minutes of meditation — you have earned the peace. 🕊️',
         },
         {
-          id: 7, requiredDays: 30, icon: '🌟', type: 'Milestone Message',
-          content: 'A FULL MONTH! Your risk of heart attack is already dropping. Your sense of taste and smell are restored. You have saved money, saved time, and saved your life. YOU ARE INCREDIBLE. 🌟🎊',
+          id: 7,
+          requiredDays: 11,
+          icon: '🌟',
+          type: 'Milestone Message',
+          title: '11-Day Strong',
+          content:
+            'Almost two weeks! Your risk of heart attack is already dropping. Your sense of taste and smell are sharper than ever. You have saved money, saved time, and saved your life. 🌟🎊',
         },
         {
-          id: 8, requiredDays: 60, icon: '🏆', type: 'Grand Reward',
-          title: 'Two Month Legend',
-          content: 'Two months! You are no longer just quitting — you ARE a non-smoker. Your lung capacity is improving every single day. Share your story, you might inspire someone else to start their journey. 🦋',
+          id: 8,
+          requiredDays: 14,
+          icon: '🏆',
+          type: 'Grand Reward',
+          title: 'Two Week Legend',
+          content:
+            'TWO FULL WEEKS! You are no longer just quitting — you ARE a non-smoker. Your lung capacity is improving every single day. Share your story, you might inspire someone else to start their journey. 🦋',
         },
       ],
     }
@@ -127,10 +164,10 @@ export default {
 
   computed: {
     unlockedCount() {
-      return this.rewards.filter(r => this.isUnlocked(r)).length
+      return this.rewards.filter((r) => this.isUnlocked(r)).length
     },
     nextReward() {
-      return this.rewards.find(r => !this.isUnlocked(r)) || null
+      return this.rewards.find((r) => !this.isUnlocked(r)) || null
     },
   },
 
@@ -152,19 +189,19 @@ export default {
     openReward(reward) {
       if (!this.isUnlocked(reward)) return
       this.activeReward = reward
-      this.showDialog   = true
+      this.showDialog = true
     },
     closeDialog() {
       if (!this.openedRewards.includes(this.activeReward.id)) {
         this.openedRewards.push(this.activeReward.id)
         localStorage.setItem('pf-opened-rewards', JSON.stringify(this.openedRewards))
       }
-      this.showDialog  = false
+      this.showDialog = false
       this.activeReward = null
     },
     confettiStyle(i) {
       const angle = (i / 8) * 360
-      const dist  = 60 + Math.random() * 30
+      const dist = 60 + Math.random() * 30
       return {
         transform: `rotate(${angle}deg) translateY(-${dist}px)`,
         animationDelay: `${i * 0.1}s`,
@@ -181,7 +218,7 @@ export default {
   border: 1.5px solid #d4c4a0;
   padding: 16px;
   margin-bottom: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
   position: relative;
 }
 
@@ -226,42 +263,67 @@ export default {
   justify-content: center;
   gap: 3px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   position: relative;
   overflow: hidden;
 }
-.reward-box:active { transform: scale(0.93); }
+.reward-box:active {
+  transform: scale(0.93);
+}
 
 /* Locked */
 .reward-locked {
   background: #e8dfc8;
   border: 1.5px dashed #c4b090;
 }
-.lock-icon { font-size: 1.3rem; filter: grayscale(0.3); }
-.lock-days { font-size: 0.6rem; color: #9a8a70; font-weight: 600; }
+.lock-icon {
+  font-size: 1.3rem;
+  filter: grayscale(0.3);
+}
+.lock-days {
+  font-size: 0.6rem;
+  color: #9a8a70;
+  font-weight: 600;
+}
 
 /* Unlocked not opened */
 .reward-unlocked:not(.reward-box .box-reward-icon ~ *) {
   background: linear-gradient(135deg, #d6efd6, #b8d4b0);
   border: 1.5px solid #7eab7e;
-  box-shadow: 0 4px 12px rgba(126,171,126,0.3);
+  box-shadow: 0 4px 12px rgba(126, 171, 126, 0.3);
 }
 .reward-new {
   background: linear-gradient(135deg, #fff3d6, #ffd580) !important;
   border: 1.5px solid #ffb347 !important;
-  box-shadow: 0 4px 12px rgba(255,179,71,0.35) !important;
+  box-shadow: 0 4px 12px rgba(255, 179, 71, 0.35) !important;
   animation: newPulse 2s ease-in-out infinite;
 }
 @keyframes newPulse {
-  0%, 100% { box-shadow: 0 4px 12px rgba(255,179,71,0.35); }
-  50%       { box-shadow: 0 4px 20px rgba(255,179,71,0.6); }
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(255, 179, 71, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(255, 179, 71, 0.6);
+  }
 }
 
-.box-emoji { font-size: 1.8rem; }
-.gift-bounce { animation: giftBounce 1.5s ease-in-out infinite; }
+.box-emoji {
+  font-size: 1.8rem;
+}
+.gift-bounce {
+  animation: giftBounce 1.5s ease-in-out infinite;
+}
 @keyframes giftBounce {
-  0%, 100% { transform: translateY(0) rotate(-5deg); }
-  50%       { transform: translateY(-5px) rotate(5deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(5deg);
+  }
 }
 .box-new-tag {
   font-size: 0.55rem;
@@ -278,14 +340,22 @@ export default {
   background: linear-gradient(135deg, #d6efd6, #b8d4b0);
   border: 1.5px solid #7eab7e;
 }
-.box-reward-icon { font-size: 1.5rem; }
-.box-reward-type { font-size: 0.55rem; color: #2e4a2e; font-weight: 600; text-align: center; padding: 0 2px; }
+.box-reward-icon {
+  font-size: 1.5rem;
+}
+.box-reward-type {
+  font-size: 0.55rem;
+  color: #2e4a2e;
+  font-weight: 600;
+  text-align: center;
+  padding: 0 2px;
+}
 
 /* Dialog overlay */
 .reward-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -301,12 +371,18 @@ export default {
   max-width: 320px;
   width: 100%;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: dialogPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes dialogPop {
-  from { opacity: 0; transform: scale(0.7); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Confetti */
@@ -322,19 +398,39 @@ export default {
   animation: confettiFly 2s ease-out forwards;
 }
 @keyframes confettiFly {
-  from { opacity: 1; transform: rotate(0deg) translateY(0); }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+    transform: rotate(0deg) translateY(0);
+  }
+  to {
+    opacity: 0;
+  }
 }
 
-.dialog-icon    { font-size: 3.5rem; margin-bottom: 8px; }
-.dialog-type    { font-size: 0.72rem; font-weight: 700; color: #7eab7e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-.dialog-title   { font-size: 1.15rem; font-weight: 800; color: #2e4a2e; margin-bottom: 12px; }
+.dialog-icon {
+  font-size: 3.5rem;
+  margin-bottom: 8px;
+}
+.dialog-type {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7eab7e;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.dialog-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2e4a2e;
+  margin-bottom: 12px;
+}
 .dialog-content {
   font-size: 0.88rem;
   color: #5a6a5a;
   line-height: 1.6;
   margin-bottom: 20px;
-  background: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   padding: 12px;
 }
@@ -350,7 +446,9 @@ export default {
   width: 100%;
   transition: transform 0.15s ease;
 }
-.dialog-close:active { transform: scale(0.96); }
+.dialog-close:active {
+  transform: scale(0.96);
+}
 
 /* Next unlock */
 .next-unlock {
@@ -361,5 +459,8 @@ export default {
   color: #9aaa90;
   padding-top: 4px;
 }
-.next-unlock-name { color: #7eab7e; font-weight: 600; }
+.next-unlock-name {
+  color: #7eab7e;
+  font-weight: 600;
+}
 </style>

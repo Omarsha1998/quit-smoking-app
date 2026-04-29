@@ -44,10 +44,9 @@ async function withRetry(fn, maxRetries = 3, baseDelayMs = 1000) {
 export const userAPI = {
   // ── App opens ──────────────────────────────────────────────────────────────
   async recordAppOpen(deviceId, isOnline = true) {
-    return withRetry(async () => {
-      const response = await api.post(`/users/${deviceId}/app-open`, { isOnline })
-      return response.data
-    })
+    // ❌ NO withRetry here — app-open must fire ONCE and never retry
+    const response = await api.post(`/users/${deviceId}/app-open`, { isOnline })
+    return response.data
   },
 
   async getAppOpens(deviceId) {
@@ -94,14 +93,17 @@ export const userAPI = {
   },
 
   // ── Admin ──────────────────────────────────────────────────────────────────
-  async checkAdmin(deviceId) {
-    const response = await api.get(`/users/${deviceId}/is-admin`)
-    return response.data.isAdmin === true
+  async verifyAdminPin(pin) {
+    const response = await api.post('/admin/verify', { pin })
+    return response.data.token
   },
 
-  async getAllUsers(deviceId) {
+  async getAllUsers(deviceId, adminToken) {
     const response = await api.get('/admin/users', {
-      headers: { 'x-device-id': deviceId },
+      headers: {
+        'x-device-id': deviceId,
+        'x-admin-token': adminToken,
+      },
     })
     return response.data
   },

@@ -646,14 +646,9 @@ export default {
     this._initComposables()
     window.addEventListener('online', this._onOnline)
     window.addEventListener('offline', this._onOffline)
-    this._loadFromStorage()
+    this._loadFromStorage() // deviceId is loaded here first
     this._setupBackgroundSync()
-
-    // ✅ Record app-open on every page load/refresh — no time gate
-    if (this.isOnline && this.deviceId) {
-      this._recordAppOpenAndSync()
-    }
-
+    this._recordAppOpenAndSync() // runs every single mount, no condition
     this._checkTodayLog()
     this._initNotifications()
   },
@@ -720,15 +715,23 @@ export default {
     // NO time gate — every open = 1 record
     // ─────────────────────────────────────────────────────────
     async _recordAppOpenAndSync() {
+      // ✅ Guard: only fire once per page lifecycle
+      if (this._appOpenFired) return
+      this._appOpenFired = true
+
       try {
-        // ✅ Always record — every open/refresh/resume counts as 1 log
         await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
         console.log('✅ app-open recorded')
       } catch (error) {
-        console.warn('⚠️ app-open failed:', error.message)
+        // 429 = already recorded recently, that's fine — don't retry, don't warn loudly
+        if (error.response?.status === 429) {
+          console.log('ℹ️ app-open skipped (rate limited)')
+        } else {
+          console.warn('⚠️ app-open failed:', error.message)
+        }
       }
 
-      // After recording open, do the rest of the sync (non-open things)
+      // After recording open, do the rest of the sync
       await this._syncNonOpen()
     },
 
@@ -800,26 +803,6 @@ export default {
         },
         5 * 60 * 1000,
       )
-
-      // ✅ Mobile/PWA: user closes app and reopens = visibilitychange
-      // Every time they come back visible = record a new app-open (no time gate)
-      // We track if we already fired for THIS visibility session to avoid double-fire
-      // on the initial mount (mount already calls _recordAppOpenAndSync)
-      let firstVisibility = true
-      document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState !== 'visible') return
-        if (!this.isOnline || !this.deviceId) return
-
-        // Skip the very first visibility event because mount already recorded it
-        if (firstVisibility) {
-          firstVisibility = false
-          return
-        }
-
-        // Every subsequent time the user brings the app back = new app-open log
-        console.log('📱 App resumed — recording app-open')
-        await this._recordAppOpenAndSync()
-      })
 
       window.addEventListener('beforeunload', () => {
         this._saveToStorage()

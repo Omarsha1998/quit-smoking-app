@@ -389,6 +389,7 @@
     <AdminPinDialog
       v-model="showPinDialog"
       :pin="adminPin"
+      :is-verifying="isVerifying"
       @update:pin="adminPin = $event"
       @verify="verifyPin"
       @cancel="closePinDialog"
@@ -624,6 +625,8 @@ export default {
       RISK_FACTORS,
       HEALTH_BENEFITS,
       WITHDRAWAL_SUPPORT,
+      adminToken: '',
+      isVerifying: false,
     }
   },
 
@@ -661,6 +664,9 @@ export default {
   beforeUnmount() {
     window.removeEventListener('online', this._onOnline)
     window.removeEventListener('offline', this._onOffline)
+    if (this._visibilityHandler) {
+      document.removeEventListener('visibilitychange', this._visibilityHandler)
+    }
     if (this.updateInterval) clearInterval(this.updateInterval)
     if (this.backgroundSyncInterval) clearInterval(this.backgroundSyncInterval)
     this._breathing.stopBreathing()
@@ -723,7 +729,6 @@ export default {
       try {
         // ✅ Always record — every open/refresh/resume counts as 1 log
         await userAPI.recordAppOpen(this.deviceId, navigator.onLine)
-        console.log('✅ app-open recorded')
       } catch (error) {
         console.warn('⚠️ app-open failed:', error.message)
       }
@@ -782,7 +787,7 @@ export default {
     // BACKGROUND SYNC — only progress, never app-open
     // ─────────────────────────────────────────────────────────
     _setupBackgroundSync() {
-      // Progress sync every 5 minutes in background — no app-open here
+      // Progress sync every 5 minutes in background
       if (this.backgroundSyncInterval) clearInterval(this.backgroundSyncInterval)
       this.backgroundSyncInterval = setInterval(
         async () => {
@@ -801,25 +806,27 @@ export default {
         5 * 60 * 1000,
       )
 
-      // ✅ Mobile/PWA: user closes app and reopens = visibilitychange
-      // Every time they come back visible = record a new app-open (no time gate)
-      // We track if we already fired for THIS visibility session to avoid double-fire
-      // on the initial mount (mount already calls _recordAppOpenAndSync)
-      let firstVisibility = true
-      document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState !== 'visible') return
-        if (!this.isOnline || !this.deviceId) return
+      // ✅ FIX: Track when app was hidden so we know it truly "closed"
+      this._appWasHidden = false
 
-        // Skip the very first visibility event because mount already recorded it
-        if (firstVisibility) {
-          firstVisibility = false
+      this._visibilityHandler = async () => {
+        if (document.visibilityState === 'hidden') {
+          // App went to background — mark it
+          this._appWasHidden = true
+          this._saveToStorage()
           return
         }
 
-        // Every subsequent time the user brings the app back = new app-open log
-        console.log('📱 App resumed — recording app-open')
+        // App came back to visible
+        if (!this._appWasHidden) return // was never hidden = just a tab switch on web
+        if (!this.isOnline || !this.deviceId) return
+
+        // Reset the flag — next hide/show cycle will trigger again
+        this._appWasHidden = false
         await this._recordAppOpenAndSync()
-      })
+      }
+
+      document.addEventListener('visibilitychange', this._visibilityHandler)
 
       window.addEventListener('beforeunload', () => {
         this._saveToStorage()
@@ -835,7 +842,32 @@ export default {
       if (this.hasStarted) this._recalc()
       if (!this.deviceId) return
       try {
-        // Only sync progress when reconnecting, not app-open
+        // ✅ Process queue first — this handles offline register, start_tracking, daily_logs
+        if (this._sync.syncQueue.value.length > 0) {
+          await this._sync.processSyncQueue()
+        }
+
+        // ✅ Then sync registration if not done yet
+        if (!this.registeredOnServer && this.userName) {
+          await userAPI.register(this.deviceId, this.userName)
+          this.registeredOnServer = true
+          this._saveToStorage()
+        }
+
+        // ✅ Then sync tracking if not done yet
+        if (this.hasStarted && !this.trackingStartedOnServer) {
+          await userAPI.startTracking(
+            this.deviceId,
+            this.userName,
+            this.quitDate,
+            this.cigarettesPerDay,
+            this.pricePerPack,
+          )
+          this.trackingStartedOnServer = true
+          this._saveToStorage()
+        }
+
+        // ✅ Then sync progress
         if (this.hasStarted) {
           await userAPI.updateProgress(
             this.deviceId,
@@ -843,9 +875,6 @@ export default {
             this.stats.cigarettesAvoided,
             this.stats.moneySaved,
           )
-        }
-        if (this._sync.syncQueue.value.length > 0) {
-          await this._sync.processSyncQueue()
         }
       } catch (error) {
         console.warn('Online sync failed:', error.message)
@@ -1415,8 +1444,11 @@ export default {
       this.showPinDialog = true
     },
 
-    verifyPin() {
-      if (this.adminPin === 'naifaharain') {
+    async verifyPin() {
+      this.isVerifying = true
+      try {
+        const token = await userAPI.verifyAdminPin(this.adminPin)
+        this.adminToken = token
         this.showPinDialog = false
         this.showAdmin = true
         this.adminPin = ''
@@ -1429,16 +1461,19 @@ export default {
           position: 'center',
           timeout: 1500,
         })
-      } else {
+      } catch (error) {
+        const msg = error.response?.data?.error || 'Incorrect PIN'
         this.pinError = true
         this.adminPin = ''
         this.$q.notify({
           color: 'negative',
-          message: 'Incorrect PIN',
+          message: msg,
           icon: 'lock',
           position: 'center',
           timeout: 1500,
         })
+      } finally {
+        this.isVerifying = false
       }
     },
 
@@ -1454,9 +1489,9 @@ export default {
     },
 
     async _loadAllUsers() {
-      if (!this.isOnline) return
+      if (!this.isOnline || !this.adminToken) return
       try {
-        const users = await userAPI.getAllUsers(this.deviceId)
+        const users = await userAPI.getAllUsers(this.deviceId, this.adminToken)
         this.allUsers = users.map((u) => ({
           id: u.device_id,
           name: u.name,
@@ -1474,6 +1509,12 @@ export default {
         }))
       } catch (error) {
         console.error(error)
+        this.$q.notify({
+          color: 'negative',
+          message: 'Failed to load users.',
+          position: 'center',
+          timeout: 2000,
+        })
       }
     },
 
