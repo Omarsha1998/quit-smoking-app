@@ -4,6 +4,7 @@ const { Pool } = require("pg");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const { runMigrations } = require("./migration");
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
 const allowedOrigins = [
   "https://puff-proof.onrender.com",
@@ -33,7 +34,12 @@ app.use(
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-device-id"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-device-id",
+      "x-admin-token",
+    ],
     credentials: true,
   }),
 );
@@ -114,24 +120,12 @@ const pool = new Pool({
 // Admin middleware
 // ─────────────────────────────────────────────────────────────────────────────
 
-const requireAdmin = async (req, res, next) => {
-  const deviceId = req.headers["x-device-id"];
-  if (!deviceId || !isValidDeviceId(deviceId)) {
+const requireAdmin = (req, res, next) => {
+  const token = req.headers["x-admin-token"];
+  if (!token || token !== ADMIN_SECRET) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  try {
-    const result = await pool.query(
-      "SELECT is_admin FROM users WHERE device_id = $1",
-      [deviceId],
-    );
-    if (!result.rows[0] || result.rows[0].is_admin !== true) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    next();
-  } catch (error) {
-    console.error("❌ Admin check failed:", error);
-    return res.status(500).json({ error: "Server error" });
-  }
+  next();
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,6 +137,14 @@ app.get("/health", (req, res) => {
 });
 
 // ── App opens ─────────────────────────────────────────────────────────────────
+
+app.post("/admin/verify", (req, res) => {
+  const { pin } = req.body;
+  if (!pin || pin !== ADMIN_SECRET) {
+    return res.status(401).json({ error: "Invalid PIN" });
+  }
+  res.json({ token: ADMIN_SECRET });
+});
 
 app.post("/users/:deviceId/app-open", syncLimiter, async (req, res) => {
   const { deviceId } = req.params;
