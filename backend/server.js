@@ -693,6 +693,91 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
+// ── Activity logs ─────────────────────────────────────────────────────────────
+
+app.post("/users/:deviceId/activity", syncLimiter, async (req, res) => {
+  const { deviceId } = req.params;
+  if (!isValidDeviceId(deviceId)) {
+    return res.status(400).json({ error: "Invalid device ID" });
+  }
+  const { activity } = req.body;
+  const allowed = ["breathing", "tap_game", "delay_timer"];
+  if (!allowed.includes(activity)) {
+    return res.status(400).json({ error: "Invalid activity" });
+  }
+  try {
+    const userCheck = await pool.query(
+      "SELECT device_id FROM users WHERE device_id = $1",
+      [deviceId],
+    );
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Device not found" });
+    }
+    await pool.query(
+      `INSERT INTO activity_logs (device_id, activity) VALUES ($1, $2)`,
+      [deviceId, activity],
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error("❌ Error logging activity:", error);
+    res.status(500).json({ error: "Failed to log activity" });
+  }
+});
+
+app.get("/admin/activities", requireAdmin, async (req, res) => {
+  try {
+    // Overall rank per activity
+    const rankResult = await pool.query(`
+      SELECT
+        activity,
+        COUNT(*) AS total_uses,
+        COUNT(DISTINCT device_id) AS unique_users
+      FROM activity_logs
+      GROUP BY activity
+      ORDER BY total_uses DESC
+    `);
+
+    // Per-user breakdown per activity
+    const userResult = await pool.query(`
+      SELECT
+        al.activity,
+        u.name,
+        al.device_id,
+        COUNT(*) AS use_count,
+        MAX(al.used_at) AS last_used
+      FROM activity_logs al
+      JOIN users u ON al.device_id = u.device_id
+      GROUP BY al.activity, al.device_id, u.name
+      ORDER BY al.activity, use_count DESC
+    `);
+
+    // Attach users array to each activity row
+    const usersMap = {};
+    userResult.rows.forEach((row) => {
+      if (!usersMap[row.activity]) usersMap[row.activity] = [];
+      usersMap[row.activity].push({
+        name: row.name,
+        deviceId: row.device_id,
+        useCount: parseInt(row.use_count),
+        lastUsed: row.last_used,
+      });
+    });
+
+    const activities = rankResult.rows.map((r) => ({
+      activity: r.activity,
+      totalUses: parseInt(r.total_uses),
+      uniqueUsers: parseInt(r.unique_users),
+      users: usersMap[r.activity] || [],
+    }));
+
+    res.json(activities);
+  } catch (error) {
+    console.error("❌ Error fetching activity stats:", error);
+    res.status(500).json({ error: "Failed to fetch activity stats" });
+  }
+});
+w;
+
 // ── 404 catch-all ─────────────────────────────────────────────────────────────
 
 app.use((req, res) => {

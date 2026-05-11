@@ -176,6 +176,22 @@ const runMigrations = async (pool) => {
         $$;
       `,
     },
+
+    {
+      name: "create_activity_logs",
+      sql: `
+        CREATE TABLE IF NOT EXISTS activity_logs (
+          id          SERIAL PRIMARY KEY,
+          device_id   VARCHAR(120) REFERENCES users(device_id) ON DELETE CASCADE,
+          activity    VARCHAR(50) NOT NULL,  -- 'breathing', 'tap_game', 'delay_timer'
+          used_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_activity_logs_device
+          ON activity_logs(device_id);
+        CREATE INDEX IF NOT EXISTS idx_activity_logs_activity
+          ON activity_logs(activity);
+      `,
+    },
   ];
 
   for (const { name, sql } of migrations) {
