@@ -777,6 +777,24 @@ app.get("/admin/activities", requireAdmin, async (req, res) => {
   }
 });
 
+app.get("/admin/users/:deviceId/daily-logs", requireAdmin, async (req, res) => {
+  const { deviceId } = req.params;
+  if (!isValidDeviceId(deviceId)) {
+    return res.status(400).json({ error: "Invalid device ID" });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT date::text AS date, smoked, COALESCE(smoked_count, 0) AS "smokedCount"
+       FROM daily_logs WHERE device_id = $1 ORDER BY date DESC`,
+      [deviceId],
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Error fetching user daily logs:", error);
+    res.status(500).json({ error: "Failed to fetch daily logs" });
+  }
+});
+
 // ── 404 catch-all ─────────────────────────────────────────────────────────────
 
 app.use((req, res) => {
