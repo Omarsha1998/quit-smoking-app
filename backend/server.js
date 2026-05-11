@@ -776,7 +776,6 @@ app.get("/admin/activities", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch activity stats" });
   }
 });
-w;
 
 // ── 404 catch-all ─────────────────────────────────────────────────────────────
 
