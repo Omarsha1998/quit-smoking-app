@@ -15,6 +15,9 @@
     "build:pwa": "./node_modules/@quasar/app-vite/bin/quasar.js build -m pwa"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.3",
+    "@capacitor/cli": "^8.3.3",
+    "@capacitor/core": "^8.3.3",
     "@capacitor/local-notifications": "^7.0.5",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.2.1",
