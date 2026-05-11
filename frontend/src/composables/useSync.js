@@ -6,19 +6,23 @@ import { LocalStorage } from 'quasar'
 import { userAPI } from '../services/api'
 
 export function useSync() {
-  const isOnline  = ref(navigator.onLine)
+  const isOnline = ref(navigator.onLine)
   const syncQueue = ref([])
 
   // ── Online / offline listeners ─────────────────────────────────────────────
-  function handleOnline()  { isOnline.value = true  }
-  function handleOffline() { isOnline.value = false }
+  function handleOnline() {
+    isOnline.value = true
+  }
+  function handleOffline() {
+    isOnline.value = false
+  }
 
   function addToSyncQueue(type, payload) {
-    // For daily_log entries, deduplicate by deviceId + date (not just type)
-    const alreadyQueued = syncQueue.value.some(s => {
+    const alreadyQueued = syncQueue.value.some((s) => {
       if (type === 'daily_log') {
         return s.type === 'daily_log' && s.deviceId === payload.deviceId && s.date === payload.date
       }
+      if (type === 'activity_log') return false // ← never deduplicate, every use counts
       return s.type === type && s.deviceId === payload.deviceId
     })
     if (!alreadyQueued) {
@@ -33,7 +37,7 @@ export function useSync() {
       const res = await userAPI.register(deviceId, userName)
       if (res?.success) {
         syncQueue.value = syncQueue.value.filter(
-          s => !(s.type === 'register' && s.deviceId === deviceId)
+          (s) => !(s.type === 'register' && s.deviceId === deviceId),
         )
         return true
       }
@@ -47,16 +51,28 @@ export function useSync() {
   async function syncTrackingStart(deviceId, userName, quitDate, cigarettesPerDay, pricePerPack) {
     if (!isOnline.value || !deviceId || !quitDate) return false
     try {
-      const res = await userAPI.startTracking(deviceId, userName, quitDate, cigarettesPerDay, pricePerPack)
+      const res = await userAPI.startTracking(
+        deviceId,
+        userName,
+        quitDate,
+        cigarettesPerDay,
+        pricePerPack,
+      )
       if (res?.success) {
         syncQueue.value = syncQueue.value.filter(
-          s => !(s.type === 'start_tracking' && s.deviceId === deviceId)
+          (s) => !(s.type === 'start_tracking' && s.deviceId === deviceId),
         )
         return true
       }
     } catch (error) {
       console.error(error)
-      addToSyncQueue('start_tracking', { deviceId, userName, quitDate, cigarettesPerDay, pricePerPack })
+      addToSyncQueue('start_tracking', {
+        deviceId,
+        userName,
+        quitDate,
+        cigarettesPerDay,
+        pricePerPack,
+      })
     }
     return false
   }
@@ -64,22 +80,37 @@ export function useSync() {
   async function syncProgress(deviceId, days, cigarettesAvoided, moneySaved) {
     if (!isOnline.value || !deviceId) return false
     try {
-      const res = await userAPI.updateProgress(deviceId, days, cigarettesAvoided, parseFloat(moneySaved.toFixed(2)))
+      const res = await userAPI.updateProgress(
+        deviceId,
+        days,
+        cigarettesAvoided,
+        parseFloat(moneySaved.toFixed(2)),
+      )
       if (res?.success) {
-        syncQueue.value = syncQueue.value.filter(s => !(s.deviceId === deviceId && !s.type))
+        syncQueue.value = syncQueue.value.filter((s) => !(s.deviceId === deviceId && !s.type))
         return true
       }
     } catch (error) {
       console.error(error)
-      syncQueue.value = syncQueue.value.filter(s => !(s.deviceId === deviceId && !s.type))
-      syncQueue.value.push({ deviceId, days, cigarettesAvoided, moneySaved: parseFloat(moneySaved.toFixed(2)), timestamp: new Date().toISOString() })
+      syncQueue.value = syncQueue.value.filter((s) => !(s.deviceId === deviceId && !s.type))
+      syncQueue.value.push({
+        deviceId,
+        days,
+        cigarettesAvoided,
+        moneySaved: parseFloat(moneySaved.toFixed(2)),
+        timestamp: new Date().toISOString(),
+      })
     }
     return false
   }
 
   async function recordAppOpen(deviceId) {
     if (!deviceId) return
-    try { await userAPI.recordAppOpen(deviceId, isOnline.value) } catch (error) { console.error(error) }
+    try {
+      await userAPI.recordAppOpen(deviceId, isOnline.value)
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   // ── Process offline queue ──────────────────────────────────────────────────
@@ -91,10 +122,13 @@ export function useSync() {
     const latestMap = {}
     ;[...syncQueue.value]
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-      .forEach(item => {
-        const key = item.type === 'daily_log'
-          ? `${item.deviceId}_daily_log_${item.date}`
-          : `${item.deviceId}_${item.type || 'progress'}`
+      .forEach((item) => {
+        const key =
+          item.type === 'daily_log'
+            ? `${item.deviceId}_daily_log_${item.date}`
+            : item.type === 'activity_log'
+              ? `${item.deviceId}_activity_log_${item.timestamp}` // ← unique per use
+              : `${item.deviceId}_${item.type || 'progress'}`
         latestMap[key] = item
       })
 
@@ -104,12 +138,24 @@ export function useSync() {
         if (item.type === 'register') {
           await userAPI.register(item.deviceId, item.userName)
         } else if (item.type === 'start_tracking') {
-          await userAPI.startTracking(item.deviceId, item.userName, item.quitDate, item.cigarettesPerDay, item.pricePerPack)
+          await userAPI.startTracking(
+            item.deviceId,
+            item.userName,
+            item.quitDate,
+            item.cigarettesPerDay,
+            item.pricePerPack,
+          )
         } else if (item.type === 'daily_log') {
-          // ── Pass smokedCount through so offline logs are accurate ──────────
           await userAPI.logDailyEntry(item.deviceId, item.date, item.smoked, item.smokedCount || 0)
+        } else if (item.type === 'activity_log') {
+          await userAPI.logActivity(item.deviceId, item.activity)
         } else {
-          await userAPI.updateProgress(item.deviceId, item.days, item.cigarettesAvoided, item.moneySaved)
+          await userAPI.updateProgress(
+            item.deviceId,
+            item.days,
+            item.cigarettesAvoided,
+            item.moneySaved,
+          )
         }
       } catch (error) {
         console.error(error)

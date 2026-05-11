@@ -21,6 +21,8 @@
             :total-money-saved="totalMoneySaved"
             :total-cigarettes-avoided="totalCigarettesAvoided"
             :avg-days-smokee-free="avgDaysSmokeeFree"
+            :activity-stats="activityStats"
+            :loading-activities="loadingActivities"
             @view-user="openUserDetails"
           />
         </template>
@@ -385,7 +387,11 @@
       @join="onJoinChallenge"
       @post="onPostEncouragement"
     />
-    <UserDetailsDialog v-model="showUserDialog" :user="selectedUser" />
+    <UserDetailsDialog
+      v-model="showUserDialog"
+      :user="selectedUser"
+      :daily-logs="selectedUserLogs"
+    />
     <AdminPinDialog
       v-model="showPinDialog"
       :pin="adminPin"
@@ -627,6 +633,9 @@ export default {
       WITHDRAWAL_SUPPORT,
       adminToken: '',
       isVerifying: false,
+      activityStats: [],
+      loadingActivities: false,
+      selectedUserLogs: [],
     }
   },
 
@@ -1256,6 +1265,7 @@ export default {
       this._breathing.resetBreathing()
       this._syncBreathingToData()
       this.showBreathingDialog = true
+      this._logActivity('breathing')
     },
     startBreathing() {
       this._breathing.startBreathing()
@@ -1263,10 +1273,25 @@ export default {
     stopBreathing() {
       this._breathing.stopBreathing()
     },
+
+    _logActivity(activity) {
+      if (!this.deviceId) return
+      if (this.isOnline) {
+        userAPI.logActivity(this.deviceId, activity)
+      } else {
+        this._sync.addToSyncQueue('activity_log', {
+          deviceId: this.deviceId,
+          activity,
+        })
+        this._saveToStorage() // persist queue immediately
+      }
+    },
+
     openDelayDialog() {
       this._delay.resetDelayTimer()
       this._syncDelayToData()
       this.showDelayDialog = true
+      this._logActivity('delay_timer')
     },
     startDelayTimer() {
       this._delay.startDelayTimer()
@@ -1278,6 +1303,7 @@ export default {
       this._tap.resetTapGame()
       this._syncTapToData()
       this.showTapGameDialog = true
+      this._logActivity('tap_game')
     },
     startTapGame() {
       this._tap.startTapGame()
@@ -1483,9 +1509,18 @@ export default {
       this.pinError = false
     },
 
-    openUserDetails(user) {
+    async openUserDetails(user) {
       this.selectedUser = user
+      this.selectedUserLogs = []
       this.showUserDialog = true
+      try {
+        if (this.isOnline && this.adminToken) {
+          const logs = await userAPI.getUserDailyLogsAdmin(user.id, this.adminToken)
+          this.selectedUserLogs = logs
+        }
+      } catch (e) {
+        console.error('Failed to load user daily logs:', e)
+      }
     },
 
     async _loadAllUsers() {
@@ -1515,6 +1550,15 @@ export default {
           position: 'center',
           timeout: 2000,
         })
+      }
+
+      this.loadingActivities = true
+      try {
+        this.activityStats = await userAPI.getActivityStats(this.adminToken)
+      } catch (e) {
+        console.error('Activity stats failed:', e)
+      } finally {
+        this.loadingActivities = false
       }
     },
 

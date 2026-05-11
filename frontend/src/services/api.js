@@ -209,6 +209,31 @@ export const userAPI = {
       }
     }
   },
+
+  // ── Activity logging ───────────────────────────────────────────────────────
+  async logActivity(deviceId, activity) {
+    // No retry — fire and forget
+    try {
+      const response = await api.post(`/users/${deviceId}/activity`, { activity })
+      return response.data
+    } catch (e) {
+      console.warn('activity log failed:', e.message)
+    }
+  },
+
+  async getActivityStats(adminToken) {
+    const response = await api.get('/admin/activities', {
+      headers: { 'x-admin-token': adminToken },
+    })
+    return response.data
+  },
+
+  async getUserDailyLogsAdmin(deviceId, adminToken) {
+    const response = await api.get(`/admin/users/${deviceId}/daily-logs`, {
+      headers: { 'x-admin-token': adminToken },
+    })
+    return response.data
+  },
 }
 
 export default api
