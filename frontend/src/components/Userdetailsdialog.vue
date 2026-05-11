@@ -1,255 +1,221 @@
 <template>
   <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)">
     <q-card
+      class="column no-wrap"
       style="
         border-radius: 20px;
-        overflow: hidden;
         border: 1.5px solid #b8d4b0;
-        min-width: 340px;
-        max-width: 420px;
-        width: 100%;
+        min-width: 320px;
+        max-width: 440px;
+        width: 95vw;
+        height: 85vh;
+        max-height: 800px;
       "
     >
-      <!-- Header -->
       <q-card-section
         style="background: linear-gradient(135deg, #7eab7e 0%, #5d9460 100%)"
-        class="text-white row items-center"
+        class="text-white row items-center no-wrap shadow-2"
       >
-        <div>
-          <div class="text-h5 text-weight-bold">
+        <div class="ellipsis">
+          <div class="text-h6 text-weight-bold ellipsis">
             <q-icon name="person" class="q-mr-sm" />{{ user?.name }}
           </div>
-          <div class="text-subtitle2" style="opacity: 0.85">User Details & Statistics</div>
+          <div class="text-subtitle2" style="opacity: 0.85">Details & Statistics</div>
         </div>
         <q-space />
         <q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
 
-      <q-scroll-area style="height: 78vh">
-        <q-card-section v-if="user" class="q-pa-md" style="background: #f5ead8">
-          <!-- Avatar & badge -->
-          <div class="text-center q-mb-lg">
-            <q-avatar
-              size="80px"
-              class="q-mb-md"
-              style="
-                background: linear-gradient(135deg, #7eab7e, #5d9460);
-                color: white;
-                font-size: 2rem;
-                font-weight: 700;
-              "
-            >
-              {{ user.name.charAt(0).toUpperCase() }}
-            </q-avatar>
-            <div class="text-h6 text-weight-bold" style="color: #2e4a2e">{{ user.name }}</div>
-            <q-badge
-              :style="badgeStyle(user.daysSmokeeFree)"
-              class="q-mt-sm q-pa-sm"
-              style="border-radius: 8px; font-weight: 600"
-            >
-              {{ badgeLabel(user.daysSmokeeFree) }}
-            </q-badge>
-          </div>
-
-          <!-- Stat mini-cards -->
-          <div class="row q-col-gutter-sm q-mb-lg">
-            <div class="col-4" v-for="card in miniCards" :key="card.label">
-              <q-card
-                class="text-center"
-                :style="card.cardStyle"
-                style="border-radius: 12px; border: 1.5px solid"
+      <q-card-section class="col q-pa-none" v-if="user">
+        <q-scroll-area style="height: 100%; background: #f5ead8">
+          <div class="q-pa-md">
+            <div class="text-center q-mb-lg">
+              <q-avatar
+                size="80px"
+                class="q-mb-md shadow-3"
+                style="background: linear-gradient(135deg, #7eab7e, #5d9460); color: white"
               >
-                <q-card-section class="q-pa-sm">
-                  <q-icon :name="card.icon" size="md" :style="{ color: card.iconColor }" />
-                  <div class="text-h6 text-weight-bold q-mt-xs" :style="{ color: card.valueColor }">
-                    {{ card.value }}
-                  </div>
-                  <div class="text-caption" :style="{ color: card.labelColor }">
-                    {{ card.label }}
-                  </div>
-                </q-card-section>
-              </q-card>
+                {{ user.name.charAt(0).toUpperCase() }}
+              </q-avatar>
+              <div class="text-h6 text-weight-bold" style="color: #2e4a2e">{{ user.name }}</div>
+              <q-badge
+                :style="badgeStyle(user.daysSmokeeFree)"
+                class="q-mt-sm q-pa-sm"
+                style="border-radius: 8px; font-weight: 600"
+              >
+                {{ badgeLabel(user.daysSmokeeFree) }}
+              </q-badge>
             </div>
-          </div>
 
-          <!-- App opens -->
-          <q-list
-            separator
-            class="q-mb-lg"
-            style="border-radius: 12px; overflow: hidden; border: 1.5px solid #b8d4b0"
-          >
-            <q-item v-for="row in openRows" :key="row.label" style="background: #fdf5e8">
-              <q-item-section avatar>
-                <q-avatar :style="row.avatarStyle" :icon="row.icon" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="text-weight-medium" style="color: #2e4a2e">{{
-                  row.label
-                }}</q-item-label>
-                <q-item-label caption style="color: #9aaa90">{{ row.caption }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-badge
-                  :style="row.badgeStyle"
-                  class="q-px-md q-py-xs"
-                  style="border-radius: 8px; font-weight: 600"
+            <div class="row q-col-gutter-sm q-mb-lg">
+              <div class="col-4" v-for="card in miniCards" :key="card.label">
+                <q-card
+                  flat
+                  class="text-center"
+                  :style="card.cardStyle"
+                  style="border-radius: 12px; border: 1.5px solid"
                 >
-                  {{ row.value }} times
-                </q-badge>
-              </q-item-section>
-            </q-item>
-          </q-list>
-
-          <!-- ── Daily Log Tracking ───────────────────────────────────────── -->
-          <div class="text-subtitle2 text-weight-bold q-mb-sm" style="color: #5d9460">
-            <q-icon name="event_note" size="18px" class="q-mr-xs" />Daily Log Tracking
-          </div>
-
-          <!-- Summary 2-cards -->
-          <div class="row q-col-gutter-sm q-mb-sm">
-            <div class="col-6">
-              <q-card style="border-radius: 10px; background: #e8f5e8; border: 1.5px solid #b8d4b0">
-                <q-card-section class="q-pa-sm text-center">
-                  <div class="text-h6 text-weight-bold" style="color: #2e4a2e">
-                    {{ smokeFreeDaysCount }}
-                  </div>
-                  <div class="text-caption" style="color: #5d9460">Smoke-Free Days</div>
-                </q-card-section>
-              </q-card>
+                  <q-card-section class="q-pa-xs">
+                    <q-icon :name="card.icon" size="sm" :style="{ color: card.iconColor }" />
+                    <div
+                      class="text-subtitle1 text-weight-bold"
+                      :style="{ color: card.valueColor }"
+                    >
+                      {{ card.value }}
+                    </div>
+                    <div
+                      class="text-caption"
+                      style="font-size: 10px"
+                      :style="{ color: card.labelColor }"
+                    >
+                      {{ card.label }}
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
             </div>
-            <div class="col-6">
-              <q-card
-                clickable
-                v-ripple
-                @click="smokedDays.length ? (showSmokedDialog = true) : null"
-                style="
-                  border-radius: 10px;
-                  background: #fce8ee;
-                  border: 1.5px solid #e8b4c0;
-                  cursor: pointer;
-                "
-              >
-                <q-card-section class="q-pa-sm text-center">
-                  <div class="text-h6 text-weight-bold" style="color: #7a3048">
-                    {{ smokedDays.length }}
-                  </div>
-                  <div class="text-caption" style="color: #c97a8a">
-                    Smoked Days
-                    <q-icon v-if="smokedDays.length" name="touch_app" size="10px" />
-                  </div>
-                </q-card-section>
-              </q-card>
+
+            <q-list
+              separator
+              class="q-mb-lg shadow-1"
+              style="border-radius: 12px; overflow: hidden; border: 1.5px solid #b8d4b0"
+            >
+              <q-item v-for="row in openRows" :key="row.label" style="background: #fdf5e8">
+                <q-item-section avatar
+                  ><q-avatar size="32px" :style="row.avatarStyle" :icon="row.icon"
+                /></q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-weight-medium" style="color: #2e4a2e">{{
+                    row.label
+                  }}</q-item-label>
+                  <q-item-label caption>{{ row.caption }}</q-item-label>
+                </q-item-section>
+                <q-item-section side
+                  ><q-badge :style="row.badgeStyle" class="q-px-sm">{{
+                    row.value
+                  }}</q-badge></q-item-section
+                >
+              </q-item>
+            </q-list>
+
+            <div class="text-subtitle2 text-weight-bold q-mb-sm" style="color: #5d9460">
+              Daily Log Tracking
+            </div>
+            <div class="row q-col-gutter-sm q-mb-md">
+              <div class="col-6">
+                <q-card
+                  flat
+                  style="border-radius: 10px; background: #e8f5e8; border: 1.5px solid #b8d4b0"
+                >
+                  <q-card-section class="text-center">
+                    <div class="text-h6 text-weight-bold" style="color: #2e4a2e">
+                      {{ smokeFreeDaysCount }}
+                    </div>
+                    <div class="text-caption">Smoke-Free</div>
+                  </q-card-section>
+                </q-card>
+              </div>
+              <div class="col-6">
+                <q-card
+                  flat
+                  clickable
+                  v-ripple
+                  @click="smokedDays.length ? (showSmokedDialog = true) : null"
+                  style="border-radius: 10px; background: #fce8ee; border: 1.5px solid #e8b4c0"
+                >
+                  <q-card-section class="text-center">
+                    <div class="text-h6 text-weight-bold" style="color: #7a3048">
+                      {{ smokedDays.length }}
+                    </div>
+                    <div class="text-caption">Smoked Days</div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
+
+            <div
+              class="text-caption q-mt-lg q-pa-md"
+              style="color: #9aaa90; background: rgba(0, 0, 0, 0.03); border-radius: 12px"
+            >
+              <div>Quit Date: {{ formatFullDate(user.quitDate) }}</div>
+              <div>Previous: {{ user.cigarettesPerDay }}/day</div>
+              <div>Pack Price: ₱{{ user.pricePerPack }}</div>
             </div>
           </div>
+        </q-scroll-area>
+      </q-card-section>
 
-          <!-- Progress bar -->
-          <div v-if="totalDaysLogged > 0" class="q-mb-md">
-            <q-linear-progress
-              :value="smokeFreeDaysCount / totalDaysLogged"
-              color="green-6"
-              track-color="red-2"
-              rounded
-              size="10px"
-            />
-            <div class="text-caption text-center q-mt-xs" style="color: #9aaa90">
-              {{ smokeFreeDaysCount }} smoke-free out of {{ totalDaysLogged }} logged days
-            </div>
-          </div>
-
-          <div v-else class="text-caption text-center q-mb-md" style="color: #b8d4b0">
-            No daily logs yet
-          </div>
-
-          <!-- Meta info -->
-          <div class="text-caption q-mt-sm" style="color: #9aaa90">
-            <div class="q-mb-xs">
-              <q-icon name="calendar_today" size="xs" /> Quit Date:
-              {{ formatFullDate(user.quitDate) }}
-            </div>
-            <div class="q-mb-xs">
-              <q-icon name="smoking_rooms" size="xs" /> Previous:
-              {{ user.cigarettesPerDay }} cigarettes/day
-            </div>
-            <div><q-icon name="attach_money" size="xs" /> Pack Price: ₱{{ user.pricePerPack }}</div>
-          </div>
-        </q-card-section>
-      </q-scroll-area>
-
-      <!-- Actions -->
       <q-card-actions
         align="right"
         class="q-pa-md"
         style="background: #ede0c4; border-top: 1px solid #d4c4a0"
       >
-        <q-btn flat label="Close" style="color: #5d9460; font-weight: 600" v-close-popup />
+        <q-btn flat label="Close" color="green-9" class="text-weight-bold" v-close-popup />
       </q-card-actions>
     </q-card>
 
-    <!-- ── Smoked Dates Dialog ──────────────────────────────────────────────── -->
     <q-dialog v-model="showSmokedDialog">
       <q-card
+        class="column no-wrap shadow-5"
         style="
           border-radius: 20px;
-          overflow: hidden;
           border: 1.5px solid #e8b4c0;
           min-width: 320px;
           max-width: 400px;
-          width: 100%;
+          width: 90vw;
+          height: 60vh; /* Fixed Height to prevent overflow */
+          background: #fdf5e8;
         "
       >
-        <!-- Header -->
         <q-card-section
           style="background: linear-gradient(135deg, #c97a8a, #a85c6e)"
-          class="text-white row items-center"
+          class="text-white row items-center no-wrap"
         >
-          <div>
-            <div class="text-h6 text-weight-bold">
-              <q-icon name="smoking_rooms" class="q-mr-sm" />Smoked Days
-            </div>
+          <div class="ellipsis">
+            <div class="text-h6 text-weight-bold">Smoked Days</div>
             <div class="text-caption" style="opacity: 0.85">
-              {{ smokedDays.length }} days · {{ totalCigarettesSmoked }} total cigarettes
+              {{ smokedDays.length }} days · {{ totalCigarettesSmoked }} total
             </div>
           </div>
           <q-space />
           <q-btn flat round dense icon="close" v-close-popup />
         </q-card-section>
 
-        <!-- List -->
-        <q-scroll-area style="height: 50vh">
-          <q-list separator style="background: white">
-            <q-item v-for="entry in smokedDays" :key="entry.date" style="padding: 10px 16px">
-              <q-item-section avatar>
-                <q-avatar
-                  size="38px"
-                  style="background: #fce8ee; color: #c97a8a; font-weight: 700; font-size: 13px"
-                >
-                  {{ entry.smokedCount }}
-                </q-avatar>
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="text-weight-bold" style="color: #2e4a2e; font-size: 13px">
-                  {{ formatLogDate(entry.date) }}
-                </q-item-label>
-                <q-item-label caption style="color: #9aaa90">
-                  {{ entry.smokedCount }} cigarette{{ entry.smokedCount !== 1 ? 's' : '' }} smoked
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-badge
-                  style="
-                    background: #f7dfe5;
-                    color: #7a3048;
-                    border-radius: 6px;
-                    padding: 4px 10px;
-                    font-weight: 700;
-                  "
-                >
-                  {{ entry.smokedCount }}×
-                </q-badge>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-scroll-area>
+        <q-card-section class="col q-pa-none">
+          <q-scroll-area style="height: 100%">
+            <q-list separator>
+              <q-item v-for="entry in smokedDays" :key="entry.date" class="q-py-md">
+                <q-item-section avatar>
+                  <q-avatar
+                    size="38px"
+                    style="background: #fce8ee; color: #c97a8a; font-weight: 700"
+                  >
+                    {{ entry.smokedCount }}
+                  </q-avatar>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-weight-bold" style="color: #2e4a2e">{{
+                    formatLogDate(entry.date)
+                  }}</q-item-label>
+                  <q-item-label caption>{{ entry.smokedCount }} cigarettes smoked</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-badge style="background: #f7dfe5; color: #7a3048; font-weight: 700"
+                    >{{ entry.smokedCount }}×</q-badge
+                  >
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-scroll-area>
+        </q-card-section>
+
+        <q-card-actions
+          align="right"
+          class="q-pa-md"
+          style="background: #ede0c4; border-top: 1px solid #e8b4c0"
+        >
+          <q-btn flat label="Close" color="brown-9" class="text-weight-bold" v-close-popup />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-dialog>
@@ -260,27 +226,20 @@ import dayjs from 'dayjs'
 
 export default {
   name: 'UserDetailsDialog',
-
   props: {
     modelValue: { type: Boolean, required: true },
     user: { type: Object, default: null },
     dailyLogs: { type: Array, default: () => [] },
   },
-
   emits: ['update:modelValue'],
-
   data() {
-    return {
-      showSmokedDialog: false,
-    }
+    return { showSmokedDialog: false }
   },
-
   watch: {
     user() {
       this.showSmokedDialog = false
     },
   },
-
   computed: {
     smokedDays() {
       return this.dailyLogs
@@ -297,7 +256,6 @@ export default {
     totalCigarettesSmoked() {
       return this.dailyLogs.reduce((sum, l) => sum + (l.smokedCount || 0), 0)
     },
-
     miniCards() {
       if (!this.user) return []
       return [
@@ -330,7 +288,6 @@ export default {
         },
       ]
     },
-
     openRows() {
       if (!this.user) return []
       return [
@@ -339,7 +296,7 @@ export default {
           avatarStyle: 'background: #d6efd6; color: #5d9460;',
           badgeStyle: 'background: #7eab7e; color: white;',
           label: "Today's Opens",
-          caption: 'Current day activity',
+          caption: 'Daily sessions',
           value: this.user.opensToday || 0,
         },
         {
@@ -347,7 +304,7 @@ export default {
           avatarStyle: 'background: #fce8ee; color: #c97a8a;',
           badgeStyle: 'background: #c97a8a; color: white;',
           label: 'This Month',
-          caption: 'Current month activity',
+          caption: 'Monthly sessions',
           value: this.user.opensThisMonth || 0,
         },
         {
@@ -355,13 +312,12 @@ export default {
           avatarStyle: 'background: #ede0c4; color: #a87840;',
           badgeStyle: 'background: #c8a870; color: white;',
           label: 'All Time',
-          caption: 'Total app opens',
+          caption: 'Total sessions',
           value: this.user.totalOpens || 0,
         },
       ]
     },
   },
-
   methods: {
     formatFullDate(d) {
       return dayjs(d).format('MMMM D, YYYY')
